@@ -780,7 +780,7 @@
         let manualLatOffset = 0;
         let manualLonOffset = 0;
 
-        // Exactly Unit 1 to 15 as requested
+        // Exactly Unit 1 to 15 initialized explicitly
         for (let i = 1; i <= 15; i++) {
             const btn = document.createElement('button');
             btn.className = 'unit-badge-btn';
@@ -828,7 +828,8 @@
             }
 
             document.querySelectorAll('.unit-badge-btn').forEach(b => b.classList.remove('active-unit'));
-            document.getElementById(`unitBtn_${unitId}`).classList.add('active-unit');
+            const targetBtn = document.getElementById(`unitBtn_${unitId}`);
+            if (targetBtn) targetBtn.classList.add('active-unit');
             activeTrackingUnitId = unitId;
 
             activeWatchId = navigator.geolocation.watchPosition(async (position) => {
