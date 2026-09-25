@@ -496,10 +496,10 @@
         const cumberlandCoords = [37.5459, -78.2153];
         const map = L.map('map', { zoomControl: true }).setView(cumberlandCoords, 13);
 
-        // Free OpenStreetMap Dark Tactical Tile Layer (No API key needed)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        // Standard OpenStreetMap Tile Layer (Free, Open Source, No API Key Required)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            subdomains: 'abcd'
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
         const incidentMarker = L.circleMarker([37.5500, -78.2200], {
