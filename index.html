@@ -57,6 +57,25 @@
             font-size: 0.58rem;
             color: var(--text-light);
             opacity: 0.85;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* System Heartbeat Indicator */
+        .sys-pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--neon-green);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 6px var(--neon-green);
+            animation: sys-heartbeat 1s infinite alternate;
+        }
+
+        @keyframes sys-heartbeat {
+            0% { transform: scale(0.8); opacity: 0.4; }
+            100% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 10px var(--neon-green); }
         }
 
         .operator-badge {
@@ -221,19 +240,19 @@
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            position: relative;
         }
 
         .unit-badge-btn.active-unit {
             background-color: var(--neon-green);
             color: var(--bg-dark);
             border-color: var(--tactical-gold);
-            animation: pulse-badge 1.5s infinite;
+            animation: pulse-badge 1s infinite alternate;
         }
 
         @keyframes pulse-badge {
-            0% { box-shadow: 0 0 0 0 rgba(0, 255, 102, 0.7); }
-            70% { box-shadow: 0 0 0 8px rgba(0, 255, 102, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 255, 102, 0); }
+            0% { transform: scale(0.95); box-shadow: 0 0 4px rgba(0, 255, 102, 0.6); }
+            100% { transform: scale(1.08); box-shadow: 0 0 14px rgba(0, 255, 102, 1); }
         }
 
         .panel-section {
@@ -380,7 +399,7 @@
         .log-box {
             list-style: none;
             font-size: 0.65rem;
-            max-height: 60px;
+            max-height: 65px;
             overflow-y: auto;
             background: rgba(0,0,0,0.3);
             border: 1px solid var(--tactical-gold);
@@ -389,18 +408,20 @@
         }
 
         .log-box li {
-            padding: 2px;
+            padding: 3px 2px;
             border-bottom: 1px dashed rgba(212, 175, 55, 0.3);
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
+        /* Blinking Map Beacon Styling */
         .blinking-gps-beacon {
             background-color: var(--neon-green);
             border: 2px solid #ffffff;
             border-radius: 50%;
             box-shadow: 0 0 12px var(--neon-green);
-            animation: beacon-pulse 1s infinite alternate;
+            animation: beacon-pulse 0.8s infinite alternate;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -410,8 +431,19 @@
         }
 
         @keyframes beacon-pulse {
-            0% { transform: scale(0.9); opacity: 0.8; }
-            100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 20px var(--neon-green); }
+            0% { transform: scale(0.85); opacity: 0.7; box-shadow: 0 0 6px var(--neon-green); }
+            100% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 20px var(--neon-green); }
+        }
+
+        .telemetry-blink {
+            color: var(--neon-green);
+            font-weight: bold;
+            animation: text-blink 0.8s infinite alternate;
+        }
+
+        @keyframes text-blink {
+            0% { opacity: 0.4; }
+            100% { opacity: 1; }
         }
 
         .modal-overlay {
@@ -476,7 +508,7 @@
     <header>
         <div class="header-title">
             <h1>Cumberland County Sheriff's Office</h1>
-            <p>TACNET SAR Command (Cumberland, VA)</p>
+            <p><span class="sys-pulse-dot"></span> TACNET SAR Command Matrix (Cumberland, VA)</p>
         </div>
         <div class="operator-badge">
             Earl A. Wood, Deputy Sheriff (Ret.)
@@ -537,7 +569,7 @@
             <div class="panel-section">
                 <h2>Active Units</h2>
                 <ul class="log-box" id="activeGpsList">
-                    <li><span>Cumberland S.O. Command</span> <span style="color:#00FF66;">Active</span></li>
+                    <li><span>Cumberland S.O. Command</span> <span class="telemetry-blink">ACTIVE</span></li>
                 </ul>
             </div>
 
@@ -604,7 +636,6 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Exact Cumberland County, Virginia coordinates
         const cumberlandCoords = [37.5055, -78.2163];
         const map = L.map('map', { zoomControl: true }).setView(cumberlandCoords, 12);
 
@@ -701,8 +732,8 @@
                 const beaconIcon = L.divIcon({
                     className: 'blinking-gps-beacon',
                     html: `<span>U${unitId}</span>`,
-                    iconSize: [26, 26],
-                    iconAnchor: [13, 13]
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
                 });
 
                 const marker = L.marker(unitLatLng, { icon: beaconIcon })
@@ -713,16 +744,16 @@
                 activeUnitsMap[unitId] = { location: locationName, time: new Date().toLocaleTimeString() };
                 updateActiveGpsList();
                 map.setView(unitLatLng, 15);
-                alert(`Unit ${unitId} GPS Active!`);
+                alert(`Unit ${unitId} GPS Active & Beacon Pulsing!`);
             }, () => { alert("Unable to retrieve GPS position."); }, { enableHighAccuracy: true });
         }
 
         function updateActiveGpsList() {
             const list = document.getElementById('activeGpsList');
-            list.innerHTML = '<li><span>Cumberland S.O. Command</span> <span style="color:#00FF66;">Active</span></li>';
+            list.innerHTML = '<li><span>Cumberland S.O. Command</span> <span class="telemetry-blink">ACTIVE</span></li>';
             for (let uId in activeUnitsMap) {
                 const li = document.createElement('li');
-                li.innerHTML = `<span>Unit ${uId}</span> <span style="color:#00FF66;">LIVE</span>`;
+                li.innerHTML = `<span>Unit ${uId}</span> <span class="telemetry-blink">LIVE BEACON</span>`;
                 list.prepend(li);
             }
         }
