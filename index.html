@@ -16,6 +16,7 @@
             --text-light: #E0E0E0;
             --alert-red: #D32F2F;
             --neon-green: #00FF66;
+            --unit-blue: #1E88E5;
         }
 
         * {
@@ -85,22 +86,9 @@
             height: calc(100vh - 60px);
         }
 
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column-reverse;
-            }
-            sidebar {
-                width: 100% !important;
-                height: 48vh;
-            }
-            #map {
-                height: 52vh !important;
-            }
-        }
-
-        /* Sidebar Panel */
+        /* Sidebar Panel (Left) */
         sidebar {
-            width: 360px;
+            width: 320px;
             background-color: var(--tactical-dark-od);
             border-right: 1px solid var(--tactical-gold);
             display: flex;
@@ -108,6 +96,73 @@
             padding: 12px;
             z-index: 999;
             overflow-y: auto;
+        }
+
+        /* Right Vertical Unit Drawer */
+        .unit-drawer {
+            width: 90px;
+            background-color: var(--tactical-dark-od);
+            border-left: 2px solid var(--tactical-gold);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 5px;
+            z-index: 999;
+            overflow-y: auto;
+        }
+
+        .unit-drawer h3 {
+            color: var(--tactical-gold);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--tactical-gold);
+            width: 100%;
+            padding-bottom: 4px;
+        }
+
+        .unit-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .unit-badge-btn {
+            width: 44px;
+            height: 44px;
+            background-color: var(--unit-blue);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        .unit-badge-btn:hover {
+            transform: scale(1.1);
+            background-color: #1565C0;
+        }
+
+        .unit-badge-btn.active-unit {
+            background-color: var(--neon-green);
+            color: var(--bg-dark);
+            border-color: var(--tactical-gold);
+            animation: pulse-badge 1.5s infinite;
+        }
+
+        @keyframes pulse-badge {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 102, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 102, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 102, 0); }
         }
 
         .panel-section {
@@ -306,7 +361,27 @@
             background-color: #111;
         }
 
-        /* Report Modal Styles */
+        /* Blinking Beacon CSS on Map */
+        .blinking-gps-beacon {
+            background-color: var(--neon-green);
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--neon-green);
+            animation: beacon-pulse 1s infinite alternate;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        @keyframes beacon-pulse {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 25px var(--neon-green); }
+        }
+
+        /* Unit Check-In Modal */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -318,24 +393,28 @@
         }
 
         .modal-content {
-            background: #fff;
-            color: #111;
+            background: var(--tactical-dark-od);
+            border: 2px solid var(--tactical-gold);
+            color: var(--text-light);
             width: 90%;
-            max-width: 650px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 25px;
+            max-width: 450px;
+            padding: 20px;
             border-radius: 5px;
             box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
         }
 
         .modal-header {
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
+            border-bottom: 1px solid var(--tactical-gold);
+            padding-bottom: 8px;
             margin-bottom: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .modal-header h2 {
+            color: var(--tactical-gold);
+            font-size: 1rem;
         }
 
         .report-section {
@@ -381,13 +460,12 @@
     </header>
 
     <div class="main-container">
+        <!-- Left Sidebar Command Center -->
         <sidebar>
-            <!-- Security / Exclusive Ownership Notice -->
             <div class="security-banner">
                 🔒 EXCLUSIVE PROPERTY: Cumberland County S.O. Unauthorized duplication prohibited.
             </div>
 
-            <!-- Terminator & Navigation Buttons -->
             <div class="panel-section">
                 <div class="nav-button-group">
                     <button class="nav-btn" onclick="goBackView()">◀ Back</button>
@@ -396,7 +474,6 @@
                 </div>
             </div>
 
-            <!-- Address Search with Neon Perimeter -->
             <div class="panel-section">
                 <h2>Address Search & Neon Perimeter</h2>
                 <div class="search-box-group">
@@ -411,15 +488,11 @@
 
             <div class="panel-section">
                 <h2>Field Operations</h2>
-                <button class="tactical-btn" id="gpsToggleBtn" onclick="toggleGPSBroadcast()">🟢 Activate Real-Time Live GPS</button>
                 <button class="tactical-btn" onclick="assignSectorGrid()">🗺️ Assign Sector Grid</button>
                 <button class="tactical-btn" onclick="triggerEvidenceCapture()">📷 Timestamp Photo / Article Find</button>
                 <button class="tactical-btn" style="background-color: #384018;" onclick="signInOutsideAgency()">📝 Outside Agency Sign-In</button>
-                
-                <!-- Report Generation Button -->
                 <button class="tactical-btn" style="background-color: #2E5B88;" onclick="openReportModal()">📋 Itemized Report & Sign-Off</button>
                 
-                <!-- HOLD-TO-ACTIVATE EMERGENCY BUTTON -->
                 <button class="emergency-btn" id="emergencyBtn">
                     🚨 HOLD 2s: OFFICER DOWN
                     <div class="hold-progress" id="holdProgress"></div>
@@ -427,9 +500,9 @@
             </div>
 
             <div class="panel-section">
-                <h2>Outside Agency Log</h2>
-                <ul class="log-box" id="agencyLogList">
-                    <li><span>CCSO Command (Primary)</span> <span style="color:#D4AF37;">Active</span></li>
+                <h2>Active Live GPS Units</h2>
+                <ul class="log-box" id="activeGpsList">
+                    <li><span>CCSO Command (Base)</span> <span style="color:#00FF66;">Tracking Active</span></li>
                 </ul>
             </div>
 
@@ -441,15 +514,40 @@
             </div>
         </sidebar>
 
+        <!-- Main Map Viewport -->
         <div id="map"></div>
+
+        <!-- Right Vertical Unit Drawer (Units 1 - 30) -->
+        <div class="unit-drawer">
+            <h3>Units</h3>
+            <div class="unit-grid" id="unitGridContainer">
+                <!-- Populated via script for units 1 to 30 -->
+            </div>
+        </div>
     </div>
 
-    <!-- Printable / Email-Ready Itemized Report Modal -->
-    <div class="modal-overlay" id="reportModal">
-        <div class="modal-content" id="printableReport">
+    <!-- Unit GPS Activation Modal -->
+    <div class="modal-overlay" id="unitModal">
+        <div class="modal-content">
             <div class="modal-header">
+                <h2 id="modalUnitTitle">Unit Check-In & Live GPS</h2>
+                <button class="go-btn" style="padding: 2px 8px;" onclick="closeUnitModal()">✕</button>
+            </div>
+            <div class="report-section">
+                <label style="display:block; font-size:0.75rem; color:var(--tactical-light-gold); margin-bottom:5px;">Current Location / Sign-In Position:</label>
+                <input type="text" id="unitLocationInput" class="search-input" style="width:100%; margin-bottom:12px;" placeholder="Enter current street, sector, or landmark...">
+                <p style="font-size:0.7rem; color:#aaa; margin-bottom:15px;">Pressing the button below instantly engages the real-time live GPS train for this unit, placing a constant blinking beacon on command maps.</p>
+                <button class="tactical-btn" style="background-color: var(--neon-green); color: var(--bg-dark); font-size: 0.85rem; padding: 10px;" onclick="activateUnitLiveGPS()">🟢 ACTIVATE LIVE NOW GPS TRAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Report Modal -->
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal-content" id="printableReport" style="background:#fff; color:#111; max-width:650px;">
+            <div class="modal-header" style="border-bottom:2px solid #333;">
                 <div>
-                    <h2>Cumberland County Sheriff's Office</h2>
+                    <h2 style="color:#111;">Cumberland County Sheriff's Office</h2>
                     <p style="font-size:0.75rem; color:#555;">Official TACNET Search & Rescue Incident Report</p>
                 </div>
                 <div style="text-align:right; font-size:0.75rem;">
@@ -463,8 +561,8 @@
             </div>
 
             <div class="report-section">
-                <h3 style="font-size:0.8rem; border-bottom:1px solid #333; margin-bottom:4px;">Outside Agency Sign-Ins</h3>
-                <ul id="reportAgencyList" style="font-size:0.75rem; padding-left:15px;"></ul>
+                <h3 style="font-size:0.8rem; border-bottom:1px solid #333; margin-bottom:4px;">Active Live GPS Units</h3>
+                <ul id="reportUnitList" style="font-size:0.75rem; padding-left:15px;"></ul>
             </div>
 
             <div class="report-section">
@@ -473,12 +571,8 @@
             </div>
 
             <div class="signature-block">
-                <div class="sig-line">
-                    Primary Investigating Officer Signature
-                </div>
-                <div class="sig-line">
-                    Shift Commander / Supervisor Sign-Off
-                </div>
+                <div class="sig-line">Primary Investigating Officer Signature</div>
+                <div class="sig-line">Shift Commander / Supervisor Sign-Off</div>
             </div>
 
             <div style="margin-top:20px; text-align:right;" class="no-print">
@@ -492,7 +586,7 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialize Map centered on Cumberland County, VA sector (No API Key Required)
+        // Initialize Map centered on Cumberland County, VA sector
         const cumberlandCoords = [37.5459, -78.2153];
         const map = L.map('map', { zoomControl: true }).setView(cumberlandCoords, 13);
 
@@ -530,6 +624,87 @@
             });
         }
         createGridOverlay();
+
+        // Populate Right Drawer with Units 1 through 30
+        const unitGridContainer = document.getElementById('unitGridContainer');
+        const unitMarkers = {}; // Stores map markers for each unit
+        const activeUnitsMap = {}; // Stores active status
+        let selectedUnitId = null;
+
+        for (let i = 1; i <= 30; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'unit-badge-btn';
+            btn.id = `unitBtn_${i}`;
+            btn.innerText = i;
+            btn.title = `Unit ${i} - Click to Sign On & Activate GPS`;
+            btn.onclick = () => openUnitModal(i);
+            unitGridContainer.appendChild(btn);
+        }
+
+        function openUnitModal(unitId) {
+            selectedUnitId = unitId;
+            document.getElementById('modalUnitTitle').innerText = `Unit ${unitId} — Live GPS Activation`;
+            document.getElementById('unitLocationInput').value = `Sector Alpha / Position Unit ${unitId}`;
+            document.getElementById('unitModal').style.display = 'flex';
+        }
+
+        function closeUnitModal() {
+            document.getElementById('unitModal').style.display = 'none';
+        }
+
+        function activateUnitLiveGPS() {
+            const locationText = document.getElementById('unitLocationInput').value;
+            if (!locationText) {
+                alert("Please enter a valid position or location.");
+                return;
+            }
+
+            // Generate offset coordinates near Cumberland sector for realism
+            const latOffset = (Math.random() - 0.5) * 0.02;
+            const lngOffset = (Math.random() - 0.5) * 0.02;
+            const unitLatLng = [cumberlandCoords[0] + latOffset, cumberlandCoords[1] + lngOffset];
+
+            // Mark button as active with pulse
+            const btn = document.getElementById(`unitBtn_${selectedUnitId}`);
+            btn.classList.add('active-unit');
+
+            // Remove previous marker if exists
+            if (unitMarkers[selectedUnitId]) {
+                map.removeLayer(unitMarkers[selectedUnitId]);
+            }
+
+            // Create Blinking Real-Time GPS Beacon on Map
+            const beaconIcon = L.divIcon({
+                className: 'blinking-gps-beacon',
+                html: `<span>U${selectedUnitId}</span>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14]
+            });
+
+            const marker = L.marker(unitLatLng, { icon: beaconIcon })
+                .addTo(map)
+                .bindPopup(`<b>🟢 LIVE GPS TRAIN ACTIVE</b><br><b>Unit Number:</b> ${selectedUnitId}<br><b>Position:</b> ${locationText}`);
+
+            unitMarkers[selectedUnitId] = marker;
+            activeUnitsMap[selectedUnitId] = { location: locationText, time: new Date().toLocaleTimeString() };
+
+            // Update active GPS list on sidebar
+            updateActiveGpsList();
+
+            map.setView(unitLatLng, 15);
+            closeUnitModal();
+            alert(`Unit ${selectedUnitId} is now locked onto the Live GPS train. Blinking beacon active on map.`);
+        }
+
+        function updateActiveGpsList() {
+            const list = document.getElementById('activeGpsList');
+            list.innerHTML = '<li><span>CCSO Command (Base)</span> <span style="color:#00FF66;">Tracking Active</span></li>';
+            for (let uId in activeUnitsMap) {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>Unit ${uId} (${activeUnitsMap[uId].location})</span> <span style="color:#00FF66;">LIVE</span>`;
+                list.prepend(li);
+            }
+        }
 
         // Address Search and Neon Green Perimeter Variables
         let searchedPerimeterCircle = null;
@@ -593,12 +768,6 @@
             if (agencyName) {
                 const now = new Date();
                 const dateTimeLabel = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
-
-                const agencyLogList = document.getElementById('agencyLogList');
-                const li = document.createElement('li');
-                li.innerHTML = `<span>${agencyName}</span> <span style="color:#D4AF37;">${dateTimeLabel}</span>`;
-                agencyLogList.prepend(li);
-
                 alert(`Outside Agency Signed In:\nAgency: ${agencyName}\nTimestamp: ${dateTimeLabel}`);
             }
         }
@@ -627,67 +796,17 @@
             }
         }
 
-        // Real-time Live GPS Activation Logic
-        let userMarker = null;
-        let emergencyMarker = null;
-        let trackingActive = false;
-        let currentLat = 37.5459;
-        let currentLng = -78.2153;
-
-        function toggleGPSBroadcast() {
-            const btn = document.getElementById('gpsToggleBtn');
-            if (!navigator.geolocation) {
-                alert("Geolocation is not supported by your browser.");
-                return;
-            }
-
-            if (!trackingActive) {
-                trackingActive = true;
-                btn.style.backgroundColor = '#00FF66';
-                btn.style.color = '#161A0D';
-                btn.innerText = '🟢 LIVE GPS ACTIVE';
-
-                navigator.geolocation.watchPosition(position => {
-                    currentLat = position.coords.latitude;
-                    currentLng = position.coords.longitude;
-                    const heading = position.coords.heading || 0;
-
-                    if (!userMarker) {
-                        userMarker = L.marker([currentLat, currentLng], {
-                            icon: L.divIcon({
-                                className: 'tactical-heading-icon',
-                                html: `<div style="position: relative; width: 20px; height: 20px;">
-                                           <div style="background-color: #D4AF37; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #4B5320; box-shadow: 0 0 10px #D4AF37; position: absolute; top: 3px; left: 3px;"></div>
-                                           <div style="position: absolute; top: -4px; left: 8px; width: 4px; height: 8px; background-color: #D4AF37; transform: rotate(${heading}deg); transform-origin: bottom center;"></div>
-                                       </div>`,
-                                iconSize: [20, 20],
-                                iconAnchor: [10, 10]
-                            })
-                        }).addTo(map).bindPopup("<b>Operator:</b> Live GPS Feed Active").openPopup();
-                    } else {
-                        userMarker.setLatLng([currentLat, currentLng]);
-                    }
-                    map.setView([currentLat, currentLng], 15);
-                }, err => {
-                    console.error(err);
-                }, { enableHighAccuracy: true });
-                
-                alert("Real-Time Live GPS tracking successfully activated.");
-            } else {
-                alert("Live GPS Tracking is already active.");
-            }
-        }
-
         // Report Generation Modal Functions
         function openReportModal() {
             document.getElementById('reportTimestamp').innerText = `Generated: ${new Date().toLocaleString()}`;
             
-            const repAgencyList = document.getElementById('reportAgencyList');
-            repAgencyList.innerHTML = '';
-            document.querySelectorAll('#agencyLogList li').forEach(li => {
-                let clone = li.cloneNode(true);
-                repAgencyList.appendChild(clone);
-            });
+            const repUnitList = document.getElementById('reportUnitList');
+            repUnitList.innerHTML = '';
+            for (let uId in activeUnitsMap) {
+                let li = document.createElement('li');
+                li.innerText = `Unit ${uId} - Position: ${activeUnitsMap[uId].location} (Active at ${activeUnitsMap[uId].time})`;
+                repUnitList.appendChild(li);
+            }
 
             const repEvidenceList = document.getElementById('reportEvidenceList');
             repEvidenceList.innerHTML = '';
@@ -748,20 +867,8 @@
         emergencyBtn.addEventListener('touchend', cancelHold);
 
         function triggerOfficerDownEmergency() {
-            holdProgress.style.width = '100%';
-            if (emergencyMarker) map.removeLayer(emergencyMarker);
-
-            emergencyMarker = L.marker([currentLat, currentLng], {
-                icon: L.divIcon({
-                    className: 'emergency-beacon-icon',
-                    html: `<div style="background-color: #FF1744; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #FFFFFF; box-shadow: 0 0 20px #FF1744; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">!</div>`,
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                })
-            }).addTo(map).bindPopup("<b style='color: #FF1744;'>🚨 CRITICAL ALERT: OFFICER DOWN!</b><br>Live Distress Beacon Broadcasting").openPopup();
-
-            map.setView([currentLat, currentLng], 16);
-            alert("🚨 OFFICER DOWN ALERT BROADCASTED LIVE TO ALL UNITS ACROSS CUMBERLAND COUNTY!");
+            holdProgress.style.width = '100% ';
+            alert("🚨 CRITICAL ALERT: OFFICER DOWN EMERGENCY BROADCASTED ACROSS ALL CHANNELS!");
         }
 
         function assignSectorGrid() {
