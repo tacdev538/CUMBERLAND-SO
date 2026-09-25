@@ -530,8 +530,8 @@
             <div class="report-section">
                 <label style="display:block; font-size:0.75rem; color:var(--tactical-light-gold); margin-bottom:5px;">Current Address or Position:</label>
                 <input type="text" id="unitLocationInput" class="search-input" style="width:100%; margin-bottom:12px;" placeholder="Enter any address, street, or landmark...">
-                <p style="font-size:0.7rem; color:#aaa; margin-bottom:15px;">Pressing the button below instantly engages the real-time live GPS train for this unit, placing a constant blinking beacon on command maps at exact coordinates.</p>
-                <button class="tactical-btn" style="background-color: var(--neon-green); color: var(--bg-dark); font-size: 0.85rem; padding: 10px;" onclick="activateUnitLiveGPS()">🟢 ACTIVATE LIVE NOW GPS TRAIN</button>
+                <p style="font-size:0.7rem; color:#aaa; margin-bottom:15px;">Clicking the button below instantly activates the real-time live GPS feed, immediately placing a blinking beacon for this unit on command maps.</p>
+                <button class="tactical-btn" style="background-color: var(--neon-green); color: var(--bg-dark); font-size: 0.85rem; padding: 12px; font-weight: bold;" onclick="activateUnitLiveGPS()">🟢 ACTIVATE GPS & SHOW BEACON</button>
             </div>
         </div>
     </div>
@@ -696,7 +696,7 @@
             updateActiveGpsList();
             map.setView(unitLatLng, 15);
             closeUnitModal();
-            alert(`Unit ${selectedUnitId} is now locked onto the Live GPS train at "${locationText}". Blinking beacon active on map.`);
+            alert(`Unit ${selectedUnitId} beacon is now active on the map at "${locationText}".`);
         }
 
         function updateActiveGpsList() {
