@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amherst County Sheriff's Office — Search and Rescue (TACNET)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cumberland County Sheriff's Office — Search and Rescue (TACNET)</title>
     <!-- Leaflet CSS for Mapping -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -39,22 +39,22 @@
         header {
             background-color: var(--tactical-dark-od);
             border-bottom: 2px solid var(--tactical-gold);
-            padding: 6px 15px;
+            padding: 6px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 1000;
+            z-index: 1200;
         }
 
         .header-title h1 {
             color: var(--tactical-gold);
-            font-size: 0.95rem;
-            letter-spacing: 1px;
+            font-size: 0.82rem;
+            letter-spacing: 0.8px;
             text-transform: uppercase;
         }
 
         .header-title p {
-            font-size: 0.65rem;
+            font-size: 0.58rem;
             color: var(--text-light);
             opacity: 0.85;
         }
@@ -63,8 +63,8 @@
             background-color: var(--tactical-od);
             border: 1px solid var(--tactical-gold);
             color: var(--tactical-gold);
-            padding: 4px 8px;
-            font-size: 0.65rem;
+            padding: 3px 6px;
+            font-size: 0.58rem;
             font-weight: bold;
             border-radius: 3px;
             text-align: right;
@@ -73,42 +73,119 @@
 
         .operator-badge span {
             display: block;
-            font-size: 0.55rem;
+            font-size: 0.5rem;
             color: var(--tactical-light-gold);
             font-weight: normal;
         }
 
-        /* Main Side-by-Side Layout */
+        /* Main Container: Map takes full width/height */
         .main-container {
             display: flex;
             flex: 1;
             position: relative;
-            height: calc(100vh - 48px);
+            width: 100vw;
+            height: calc(100vh - 44px);
         }
 
-        /* Left Sidebar Panel (Compacted) */
-        sidebar {
-            width: 270px;
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #111;
+            z-index: 1;
+        }
+
+        /* Floating Navigation Toggle */
+        .floating-nav-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1100;
+            display: flex;
+            gap: 6px;
+        }
+
+        .float-btn {
             background-color: var(--tactical-dark-od);
-            border-right: 1px solid var(--tactical-gold);
+            border: 2px solid var(--tactical-gold);
+            color: var(--tactical-gold);
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+            text-transform: uppercase;
+        }
+
+        .float-btn:active {
+            background-color: var(--tactical-gold);
+            color: var(--bg-dark);
+        }
+
+        /* Sliding Command Panel (Left) */
+        sidebar {
+            position: absolute;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            height: 100%;
+            background-color: var(--tactical-dark-od);
+            border-right: 2px solid var(--tactical-gold);
             display: flex;
             flex-direction: column;
-            padding: 8px;
-            z-index: 999;
+            padding: 10px;
+            z-index: 1150;
             overflow-y: auto;
+            transition: left 0.3s ease-in-out;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
         }
 
-        /* Right Vertical Unit Drawer (Compacted) */
+        sidebar.open {
+            left: 0;
+        }
+
+        /* Sliding Unit Drawer (Right) */
         .unit-drawer {
-            width: 70px;
+            position: absolute;
+            top: 0;
+            right: -85px;
+            width: 80px;
+            height: 100%;
             background-color: var(--tactical-dark-od);
             border-left: 2px solid var(--tactical-gold);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 6px 3px;
-            z-index: 999;
+            padding: 8px 4px;
+            z-index: 1150;
             overflow-y: auto;
+            transition: right 0.3s ease-in-out;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .unit-drawer.open {
+            right: 0;
+        }
+
+        .drawer-toggle-handle {
+            position: absolute;
+            right: 80px;
+            top: 15px;
+            background-color: var(--tactical-dark-od);
+            border: 2px solid var(--tactical-gold);
+            border-right: none;
+            color: var(--tactical-gold);
+            padding: 8px 6px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+            cursor: pointer;
+            z-index: 1150;
+            box-shadow: -2px 2px 5px rgba(0,0,0,0.4);
         }
 
         .unit-drawer h3 {
@@ -116,40 +193,34 @@
             font-size: 0.6rem;
             text-transform: uppercase;
             text-align: center;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             border-bottom: 1px solid var(--tactical-gold);
             width: 100%;
-            padding-bottom: 2px;
+            padding-bottom: 3px;
         }
 
         .unit-grid {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 6px;
             width: 100%;
             align-items: center;
         }
 
         .unit-badge-btn {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             background-color: var(--unit-blue);
             color: #ffffff;
             border: 2px solid #ffffff;
             border-radius: 50%;
             font-weight: bold;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
-            transition: transform 0.1s, background-color 0.2s;
-        }
-
-        .unit-badge-btn:hover {
-            transform: scale(1.08);
-            background-color: #1565C0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
 
         .unit-badge-btn.active-unit {
@@ -166,35 +237,34 @@
         }
 
         .panel-section {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .panel-section h2 {
             color: var(--tactical-gold);
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             text-transform: uppercase;
             border-bottom: 1px solid var(--tactical-gold);
             padding-bottom: 2px;
-            margin-bottom: 4px;
-            letter-spacing: 0.4px;
+            margin-bottom: 5px;
         }
 
         .security-banner {
             background: rgba(212, 175, 55, 0.15);
             border: 1px solid var(--tactical-gold);
-            padding: 4px;
-            font-size: 0.6rem;
+            padding: 5px;
+            font-size: 0.62rem;
             color: var(--tactical-light-gold);
             text-align: center;
             border-radius: 3px;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             font-weight: bold;
         }
 
         .search-box-group {
             display: flex;
-            gap: 3px;
-            margin-bottom: 4px;
+            gap: 4px;
+            margin-bottom: 5px;
         }
 
         .search-input {
@@ -202,8 +272,8 @@
             background: rgba(0,0,0,0.5);
             border: 1px solid var(--tactical-gold);
             color: #fff;
-            padding: 4px 6px;
-            font-size: 0.7rem;
+            padding: 5px;
+            font-size: 0.72rem;
             border-radius: 3px;
         }
 
@@ -211,24 +281,20 @@
             background-color: var(--tactical-gold);
             color: var(--bg-dark);
             border: none;
-            padding: 4px 8px;
+            padding: 5px 10px;
             font-weight: bold;
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             border-radius: 3px;
             cursor: pointer;
-        }
-
-        .go-btn:hover {
-            background-color: var(--tactical-light-gold);
         }
 
         .perimeter-control {
             background: rgba(0,0,0,0.3);
             border: 1px solid var(--neon-green);
-            padding: 4px;
+            padding: 5px;
             border-radius: 3px;
             font-size: 0.65rem;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
         }
 
         .perimeter-control label {
@@ -248,26 +314,20 @@
             background-color: var(--tactical-od);
             color: var(--tactical-gold);
             border: 1px solid var(--tactical-gold);
-            padding: 5px 6px;
+            padding: 6px;
             width: 100%;
             font-weight: bold;
-            font-size: 0.68rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
             border-radius: 3px;
             cursor: pointer;
-            margin-bottom: 4px;
-            transition: all 0.2s;
-        }
-
-        .tactical-btn:hover {
-            background-color: var(--tactical-gold);
-            color: var(--bg-dark);
+            margin-bottom: 5px;
         }
 
         .nav-button-group {
             display: flex;
-            gap: 3px;
-            margin-bottom: 4px;
+            gap: 4px;
+            margin-bottom: 5px;
         }
 
         .nav-btn {
@@ -275,18 +335,13 @@
             background-color: #384018;
             color: var(--tactical-gold);
             border: 1px solid var(--tactical-gold);
-            padding: 5px;
+            padding: 6px;
             font-weight: bold;
-            font-size: 0.62rem;
+            font-size: 0.65rem;
             text-transform: uppercase;
             border-radius: 3px;
             cursor: pointer;
             text-align: center;
-        }
-
-        .nav-btn:hover {
-            background-color: var(--tactical-gold);
-            color: var(--bg-dark);
         }
 
         .terminate-btn {
@@ -295,23 +350,18 @@
             border: 1px solid #FF0000;
         }
 
-        .terminate-btn:hover {
-            background-color: #FF0000;
-            color: #fff;
-        }
-
         .emergency-btn {
             background-color: var(--alert-red);
             color: #ffffff;
             border: 2px solid #FFD700;
-            padding: 7px;
+            padding: 8px;
             width: 100%;
             font-weight: bold;
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             border-radius: 3px;
             cursor: pointer;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
             position: relative;
             overflow: hidden;
             box-shadow: 0 0 6px rgba(211, 47, 47, 0.6);
@@ -329,13 +379,13 @@
 
         .log-box {
             list-style: none;
-            font-size: 0.62rem;
-            max-height: 55px;
+            font-size: 0.65rem;
+            max-height: 60px;
             overflow-y: auto;
             background: rgba(0,0,0,0.3);
             border: 1px solid var(--tactical-gold);
             border-radius: 3px;
-            padding: 3px;
+            padding: 4px;
         }
 
         .log-box li {
@@ -343,12 +393,6 @@
             border-bottom: 1px dashed rgba(212, 175, 55, 0.3);
             display: flex;
             justify-content: space-between;
-        }
-
-        #map {
-            flex: 1;
-            height: 100%;
-            background-color: #111;
         }
 
         .blinking-gps-beacon {
@@ -385,10 +429,9 @@
             border: 2px solid var(--tactical-gold);
             color: var(--text-light);
             width: 90%;
-            max-width: 600px;
+            max-width: 550px;
             padding: 15px;
             border-radius: 4px;
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
         }
 
         .modal-header {
@@ -402,11 +445,11 @@
 
         .modal-header h2 {
             color: var(--tactical-gold);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .report-section {
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             margin-bottom: 10px;
         }
 
@@ -421,9 +464,9 @@
         .sig-line {
             width: 45%;
             border-bottom: 1px solid #111;
-            margin-top: 25px;
+            margin-top: 20px;
             text-align: center;
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             padding-bottom: 2px;
         }
     </style>
@@ -432,8 +475,8 @@
 
     <header>
         <div class="header-title">
-            <h1>Amherst County Sheriff's Office</h1>
-            <p>TACNET Search & Rescue Command (Sheriff Ayres)</p>
+            <h1>Cumberland County Sheriff's Office</h1>
+            <p>TACNET SAR Command (Cumberland, VA)</p>
         </div>
         <div class="operator-badge">
             Earl A. Wood, Deputy Sheriff (Ret.)
@@ -442,10 +485,20 @@
     </header>
 
     <div class="main-container">
-        <!-- Left Sidebar Command Center -->
-        <sidebar>
+        <!-- Floating Navigation Toggle -->
+        <div class="floating-nav-bar">
+            <button class="float-btn" onclick="toggleCommandPanel()">☰ Command</button>
+        </div>
+
+        <!-- Sliding Left Command Panel -->
+        <sidebar id="commandPanel">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <h2 style="color:var(--tactical-gold); font-size:0.8rem;">Command Menu</h2>
+                <button onclick="toggleCommandPanel()" style="background:none; border:none; color:var(--tactical-gold); font-size:1.1rem; font-weight:bold; cursor:pointer;">✕</button>
+            </div>
+
             <div class="security-banner">
-                🔒 EXCLUSIVE PROPERTY: Amherst County S.O.
+                🔒 EXCLUSIVE PROPERTY: Cumberland County S.O.
             </div>
 
             <div class="panel-section">
@@ -459,7 +512,7 @@
             <div class="panel-section">
                 <h2>Address Search & Perimeter</h2>
                 <div class="search-box-group">
-                    <input type="text" id="addressInput" class="search-input" placeholder="Enter location...">
+                    <input type="text" id="addressInput" class="search-input" placeholder="Enter Cumberland location...">
                     <button class="go-btn" onclick="searchAddressAndPerimeter()">GO</button>
                 </div>
                 <div class="perimeter-control" id="perimeterBox" style="display:none;">
@@ -484,7 +537,7 @@
             <div class="panel-section">
                 <h2>Active Units</h2>
                 <ul class="log-box" id="activeGpsList">
-                    <li><span>Amherst S.O. Command</span> <span style="color:#00FF66;">Active</span></li>
+                    <li><span>Cumberland S.O. Command</span> <span style="color:#00FF66;">Active</span></li>
                 </ul>
             </div>
 
@@ -496,11 +549,12 @@
             </div>
         </sidebar>
 
-        <!-- Main Map Viewport -->
+        <!-- Fullscreen Map Viewport -->
         <div id="map"></div>
 
-        <!-- Right Vertical Unit Drawer (Units 1 - 30) -->
-        <div class="unit-drawer">
+        <!-- Sliding Right Unit Drawer & Handle -->
+        <div class="drawer-toggle-handle" onclick="toggleUnitDrawer()">Units ➔</div>
+        <div class="unit-drawer" id="unitDrawer">
             <h3>Units</h3>
             <div class="unit-grid" id="unitGridContainer"></div>
         </div>
@@ -511,7 +565,7 @@
         <div class="modal-content" id="printableReport" style="background:#fff; color:#111;">
             <div class="modal-header" style="border-bottom:2px solid #333;">
                 <div>
-                    <h2 style="color:#111;">Amherst County Sheriff's Office</h2>
+                    <h2 style="color:#111;">Cumberland County Sheriff's Office</h2>
                     <p style="font-size:0.7rem; color:#555;">Official TACNET Search & Rescue Incident Report</p>
                 </div>
                 <div style="text-align:right; font-size:0.7rem;">
@@ -520,7 +574,7 @@
             </div>
 
             <div class="report-section">
-                <b>Incident Summary:</b> Active Search Operation | Amherst County Sector Alpha<br>
+                <b>Incident Summary:</b> Active Search Operation | Cumberland County, VA<br>
                 <b>Operation Status:</b> Active / Managed via TACNET Matrix
             </div>
 
@@ -550,29 +604,30 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const amherstCoords = [37.5855, -79.0505];
-        const map = L.map('map', { zoomControl: true }).setView(amherstCoords, 12);
+        // Exact Cumberland County, Virginia coordinates
+        const cumberlandCoords = [37.5055, -78.2163];
+        const map = L.map('map', { zoomControl: true }).setView(cumberlandCoords, 12);
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 19,
             attribution: 'Tiles &copy; Esri'
         }).addTo(map);
 
-        const incidentMarker = L.circleMarker(amherstCoords, {
+        const incidentMarker = L.circleMarker(cumberlandCoords, {
             radius: 10,
             color: '#D4AF37',
             fillColor: '#FFD700',
             fillOpacity: 0.9
-        }).addTo(map).bindPopup("<b>Amherst County S.O. Command</b><br>TACNET Base Operations");
+        }).addTo(map).bindPopup("<b>Cumberland County S.O. Command</b><br>TACNET Base Operations");
 
         let searchGridLayer = L.layerGroup().addTo(map);
 
         function createGridOverlay() {
             const sectors = [
-                { name: "Amherst Sector A1", coords: [[37.6000, -79.0800], [37.6400, -79.0400]] },
-                { name: "Amherst Sector A2", coords: [[37.6000, -79.0400], [37.6400, -79.0000]] },
-                { name: "Amherst Sector B1", coords: [[37.5600, -79.0800], [37.6000, -79.0400]] },
-                { name: "Amherst Sector B2", coords: [[37.5600, -79.0400], [37.5600, -79.0000]] }
+                { name: "Cumberland Sector A1", coords: [[37.5300, -78.2500], [37.5700, -78.2000]] },
+                { name: "Cumberland Sector A2", coords: [[37.5300, -78.2000], [37.5700, -78.1500]] },
+                { name: "Cumberland Sector B1", coords: [[37.4700, -78.2500], [37.5300, -78.2000]] },
+                { name: "Cumberland Sector B2", coords: [[37.4700, -78.2000], [37.5300, -78.1500]] }
             ];
             sectors.forEach(sec => {
                 let rect = L.rectangle(sec.coords, {
@@ -599,6 +654,14 @@
             btn.title = `Unit ${i} - Click to Activate GPS`;
             btn.onclick = () => activateUnitDeviceGPS(i);
             unitGridContainer.appendChild(btn);
+        }
+
+        function toggleCommandPanel() {
+            document.getElementById('commandPanel').classList.toggle('open');
+        }
+
+        function toggleUnitDrawer() {
+            document.getElementById('unitDrawer').classList.toggle('open');
         }
 
         async function geocodeAddress(addressStr) {
@@ -638,8 +701,8 @@
                 const beaconIcon = L.divIcon({
                     className: 'blinking-gps-beacon',
                     html: `<span>U${unitId}</span>`,
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
+                    iconSize: [26, 26],
+                    iconAnchor: [13, 13]
                 });
 
                 const marker = L.marker(unitLatLng, { icon: beaconIcon })
@@ -656,7 +719,7 @@
 
         function updateActiveGpsList() {
             const list = document.getElementById('activeGpsList');
-            list.innerHTML = '<li><span>Amherst S.O. Command</span> <span style="color:#00FF66;">Active</span></li>';
+            list.innerHTML = '<li><span>Cumberland S.O. Command</span> <span style="color:#00FF66;">Active</span></li>';
             for (let uId in activeUnitsMap) {
                 const li = document.createElement('li');
                 li.innerHTML = `<span>Unit ${uId}</span> <span style="color:#00FF66;">LIVE</span>`;
@@ -692,8 +755,8 @@
             if (searchedPerimeterCircle) searchedPerimeterCircle.setRadius(currentPerimeterRadius);
         }
 
-        function goBackView() { map.setView(amherstCoords, 12); }
-        function resetViewMatrix() { map.setView(amherstCoords, 12); }
+        function goBackView() { map.setView(cumberlandCoords, 12); }
+        function resetViewMatrix() { map.setView(cumberlandCoords, 12); }
         function terminateSearchOperation() { if (confirm("Terminate operation?")) alert("Terminated."); }
         function signInOutsideAgency() { const name = prompt("Agency Name:"); if (name) alert(`Signed in: ${name}`); }
 
@@ -746,7 +809,7 @@
             });
         });
 
-        function assignSectorGrid() { alert("Grid Matrix Active."); }
+        function assignSectorGrid() { alert("Cumberland Grid Matrix Active."); }
     </script>
 </body>
 </html>
