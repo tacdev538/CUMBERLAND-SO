@@ -517,10 +517,10 @@
             background-color: var(--neon-green);
             color: var(--bg-dark);
             border: 2px solid var(--tactical-gold);
-            padding: 10px;
+            padding: 12px;
             width: 100%;
             font-weight: bold;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
             border-radius: 4px;
             cursor: pointer;
@@ -565,12 +565,12 @@
             </div>
             <div class="login-form-group">
                 <label>Officer Name & Rank:</label>
-                <input type="text" id="loginOfficerName" class="login-input" placeholder="e.g. Dep. J. Miller">
+                <input type="text" id="loginOfficerName" class="login-input" placeholder="e.g. Dep. J. Miller" value="Dep. J. Miller">
             </div>
             <div class="login-form-group">
                 <label>Assign Unit Number (1 - 15):</label>
                 <select id="loginUnitSelect" class="login-select">
-                    <option value="1">Unit 1</option>
+                    <option value="1" selected>Unit 1</option>
                     <option value="2">Unit 2</option>
                     <option value="3">Unit 3</option>
                     <option value="4">Unit 4</option>
@@ -587,7 +587,8 @@
                     <option value="15">Unit 15</option>
                 </select>
             </div>
-            <button class="login-btn" onclick="authenticateAndEngageGPS()">🔑 Authenticate & Go Live on Map</button>
+            <!-- DIRECT INLINE ONCLICK FOR BULLETPROOF FIRING -->
+            <button type="button" class="login-btn" onclick="executeSystemLogin()">🔑 Authenticate & Go Live on Map</button>
         </div>
     </div>
 
@@ -761,7 +762,7 @@
         const cumberlandDefaultCoords = [37.5055, -78.2163];
         const map = L.map('map', { zoomControl: true }).setView(cumberlandDefaultCoords, 12);
 
-        // ESRI World Topographic Map / Street Map layer (Zero CORS or GitHub block restrictions)
+        // ESRI World Topographic Map / Street Map layer
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 19,
             attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, increment P Corporation, and the GIS User Community'
@@ -842,7 +843,8 @@
             unitGridContainer.appendChild(btn);
         }
 
-        function authenticateAndEngageGPS() {
+        // Bulletproof Global Login Function
+        function executeSystemLogin() {
             const nameInput = document.getElementById('loginOfficerName').value.trim();
             const unitSelect = document.getElementById('loginUnitSelect').value;
 
