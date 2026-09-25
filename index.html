@@ -492,13 +492,14 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialize Map centered on Cumberland County, VA sector
+        // Initialize Map centered on Cumberland County, VA sector (No API Key Required)
         const cumberlandCoords = [37.5459, -78.2153];
-        const map = L.map('map').setView(cumberlandCoords, 13);
+        const map = L.map('map', { zoomControl: true }).setView(cumberlandCoords, 13);
 
+        // Free OpenStreetMap Dark Tactical Tile Layer (No API key needed)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap & CARTO',
-            maxZoom: 19
+            maxZoom: 19,
+            subdomains: 'abcd'
         }).addTo(map);
 
         const incidentMarker = L.circleMarker([37.5500, -78.2200], {
@@ -542,9 +543,7 @@
                 return;
             }
 
-            // Simulated geocoding offset for demonstration in Cumberland County sector
             searchTargetLatLng = [37.5520 + (Math.random() * 0.008 - 0.004), -78.2100 + (Math.random() * 0.008 - 0.004)];
-            
             map.setView(searchTargetLatLng, 15);
 
             if (searchedPerimeterCircle) {
@@ -683,7 +682,6 @@
         function openReportModal() {
             document.getElementById('reportTimestamp').innerText = `Generated: ${new Date().toLocaleString()}`;
             
-            // Populate agency list in report
             const repAgencyList = document.getElementById('reportAgencyList');
             repAgencyList.innerHTML = '';
             document.querySelectorAll('#agencyLogList li').forEach(li => {
@@ -691,7 +689,6 @@
                 repAgencyList.appendChild(clone);
             });
 
-            // Populate evidence list in report
             const repEvidenceList = document.getElementById('reportEvidenceList');
             repEvidenceList.innerHTML = '';
             document.querySelectorAll('#evidenceList li').forEach(li => {
