@@ -399,7 +399,7 @@
         .log-box {
             list-style: none;
             font-size: 0.65rem;
-            max-height: 65px;
+            max-height: 55px;
             overflow-y: auto;
             background: rgba(0,0,0,0.3);
             border: 1px solid var(--tactical-gold);
@@ -420,7 +420,7 @@
             background-color: var(--neon-green);
             border: 2px solid #ffffff;
             border-radius: 50%;
-            box-shadow: 0 0 12px var(--neon-green);
+            box-shadow: 0 0 14px var(--neon-green);
             animation: beacon-pulse 0.8s infinite alternate;
             display: flex;
             align-items: center;
@@ -432,7 +432,7 @@
 
         @keyframes beacon-pulse {
             0% { transform: scale(0.85); opacity: 0.7; box-shadow: 0 0 6px var(--neon-green); }
-            100% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 20px var(--neon-green); }
+            100% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 22px var(--neon-green); }
         }
 
         .telemetry-blink {
@@ -538,6 +538,21 @@
                     <button class="nav-btn" onclick="goBackView()">◀ Back</button>
                     <button class="nav-btn" onclick="panToMyLiveGPS()">⟳ My GPS</button>
                     <button class="nav-btn terminate-btn" onclick="terminateSearchOperation()">🛑 End</button>
+                </div>
+            </div>
+
+            <!-- Manual GPS Calibration / Offset Controls -->
+            <div class="panel-section" style="background: rgba(0,0,0,0.3); padding: 6px; border: 1px solid var(--tactical-gold); border-radius: 3px;">
+                <h2 style="font-size:0.65rem; margin-bottom:3px;">🛠️ GPS Fine-Tuning (Drift Fix)</h2>
+                <div style="font-size:0.58rem; color:#ccc; margin-bottom:4px;">If GPS is offset by ~300 yds, adjust or tap Snap:</div>
+                <div style="display:flex; gap:4px; margin-bottom:4px;">
+                    <button class="go-btn" style="flex:1; font-size:0.6rem;" onclick="applyGpsOffset(0.002, 0)">N (+300y)</button>
+                    <button class="go-btn" style="flex:1; font-size:0.6rem;" onclick="applyGpsOffset(-0.002, 0)">S (-300y)</button>
+                </div>
+                <div style="display:flex; gap:4px;">
+                    <button class="go-btn" style="flex:1; font-size:0.6rem;" onclick="applyGpsOffset(0, -0.0025)">W</button>
+                    <button class="go-btn" style="flex:1; font-size:0.6rem; background:#384018; color:var(--tactical-gold);" onclick="resetGpsOffset()">Reset Offset</button>
+                    <button class="go-btn" style="flex:1; font-size:0.6rem;" onclick="applyGpsOffset(0, 0.0025)">E</button>
                 </div>
             </div>
 
@@ -677,6 +692,10 @@
         const unitMarkers = {}; 
         const activeUnitsMap = {}; 
         let lastKnownUserLatLng = null;
+        let activeWatchId = null;
+        let activeTrackingUnitId = null;
+        let manualLatOffset = 0;
+        let manualLonOffset = 0;
 
         for (let i = 1; i <= 30; i++) {
             const btn = document.createElement('button');
@@ -714,60 +733,90 @@
             return `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
         }
 
-        async function activateUnitDeviceGPS(unitId) {
+        function activateUnitDeviceGPS(unitId) {
             if (!navigator.geolocation) {
                 alert("Geolocation not supported.");
                 return;
             }
-            navigator.geolocation.getCurrentPosition(async (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
+
+            // Clear previous watch if active
+            if (activeWatchId !== null) {
+                navigator.geolocation.clearWatch(activeWatchId);
+            }
+
+            // Remove active style from all units, add to selected
+            document.querySelectorAll('.unit-badge-btn').forEach(b => b.classList.remove('active-unit'));
+            document.getElementById(`unitBtn_${unitId}`).classList.add('active-unit');
+            activeTrackingUnitId = unitId;
+
+            // Use continuous high-accuracy watchPosition to lock onto real-time satellite fixes
+            activeWatchId = navigator.geolocation.watchPosition(async (position) => {
+                const rawLat = position.coords.latitude;
+                const rawLon = position.coords.longitude;
+                
+                // Apply manual calibration offsets if adjusted
+                const lat = rawLat + manualLatOffset;
+                const lon = rawLon + manualLonOffset;
+                
                 const unitLatLng = [lat, lon];
                 lastKnownUserLatLng = unitLatLng;
                 let locationName = await reverseGeocode(lat, lon);
-
-                const btn = document.getElementById(`unitBtn_${unitId}`);
-                btn.classList.add('active-unit');
 
                 if (unitMarkers[unitId]) map.removeLayer(unitMarkers[unitId]);
 
                 const beaconIcon = L.divIcon({
                     className: 'blinking-gps-beacon',
                     html: `<span>U${unitId}</span>`,
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15]
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
                 });
 
                 const marker = L.marker(unitLatLng, { icon: beaconIcon })
                     .addTo(map)
-                    .bindPopup(`<b>🟢 LIVE GPS LOCKED</b><br><b>Unit:</b> ${unitId}<br><b>Pos:</b> ${locationName}`);
+                    .bindPopup(`<b>🟢 LIVE SAT LOCK</b><br><b>Unit:</b> ${unitId}<br><b>Pos:</b> ${locationName}`);
 
                 unitMarkers[unitId] = marker;
                 activeUnitsMap[unitId] = { location: locationName, time: new Date().toLocaleTimeString() };
                 updateActiveGpsList();
                 
-                // Immediately snap map straight to your location at close zoom (17)
-                map.setView(unitLatLng, 17);
-                alert(`Unit ${unitId} locked to your exact coordinates!`);
+                // Snap map straight to exact boots location at high zoom (18)
+                map.setView(unitLatLng, 18);
             }, (error) => { 
-                alert("GPS Error: Unable to retrieve your position. Check device location permissions."); 
-                console.error(error);
-            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+                console.error("GPS Watch Error:", error);
+            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+
+            alert(`Unit ${unitId} continuous high-accuracy tracking engaged!`);
+        }
+
+        function applyGpsOffset(latDelta, lonDelta) {
+            manualLatOffset += latDelta;
+            manualLonOffset += lonDelta;
+            if (lastKnownUserLatLng && activeTrackingUnitId) {
+                activateUnitDeviceGPS(activeTrackingUnitId);
+            } else {
+                alert("Offset adjusted. Tap your Unit badge to refresh position.");
+            }
+        }
+
+        function resetGpsOffset() {
+            manualLatOffset = 0;
+            manualLonOffset = 0;
+            if (activeTrackingUnitId) {
+                activateUnitDeviceGPS(activeTrackingUnitId);
+            } else {
+                alert("GPS Offset reset.");
+            }
         }
 
         function panToMyLiveGPS() {
             if (lastKnownUserLatLng) {
-                map.setView(lastKnownUserLatLng, 17);
+                map.setView(lastKnownUserLatLng, 18);
             } else {
-                // If no unit activated yet, fetch current GPS on the fly to center up
-                if (!navigator.geolocation) {
-                    alert("Geolocation not supported.");
-                    return;
+                if (activeTrackingUnitId) {
+                    activateUnitDeviceGPS(activeTrackingUnitId);
+                } else {
+                    alert("Select a unit number on the right drawer to start GPS locking.");
                 }
-                navigator.geolocation.getCurrentPosition((position) => {
-                    lastKnownUserLatLng = [position.coords.latitude, position.coords.longitude];
-                    map.setView(lastKnownUserLatLng, 17);
-                }, () => { alert("Unable to get current GPS position."); }, { enableHighAccuracy: true });
             }
         }
 
@@ -810,7 +859,44 @@
         }
 
         function goBackView() { map.setView(cumberlandDefaultCoords, 12); }
-        function terminateSearchOperation() { if (confirm("Terminate operation?")) alert("Terminated."); }
+
+        function terminateSearchOperation() {
+            if (confirm("Are you sure you want to terminate the active operation? This will clear all tracking and reset telemetry.")) {
+                // Stop GPS geolocation watch
+                if (activeWatchId !== null) {
+                    navigator.geolocation.clearWatch(activeWatchId);
+                    activeWatchId = null;
+                }
+                
+                // Remove all active unit markers from map
+                for (let uId in unitMarkers) {
+                    map.removeLayer(unitMarkers[uId]);
+                }
+
+                // Reset trackers & UI states
+                Object.keys(unitMarkers).forEach(k => delete unitMarkers[k]);
+                Object.keys(activeUnitsMap).forEach(k => delete activeUnitsMap[k]);
+                activeTrackingUnitId = null;
+                lastKnownUserLatLng = null;
+                manualLatOffset = 0;
+                manualLonOffset = 0;
+
+                // Clear active unit styling
+                document.querySelectorAll('.unit-badge-btn').forEach(b => b.classList.remove('active-unit'));
+
+                // Reset lists
+                document.getElementById('activeGpsList').innerHTML = '<li><span>Cumberland S.O. Command</span> <span style="color:#888;">TERMINATED</span></li>';
+
+                // Reset map view to command base
+                map.setView(cumberlandDefaultCoords, 12);
+
+                // Close command panel
+                toggleCommandPanel();
+
+                alert("Operation successfully terminated and telemetry cleared.");
+            }
+        }
+
         function signInOutsideAgency() { const name = prompt("Agency Name:"); if (name) alert(`Signed in: ${name}`); }
 
         function triggerEvidenceCapture() {
