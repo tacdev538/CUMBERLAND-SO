@@ -564,9 +564,9 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialize Map centered on Amherst County, Virginia
-        const amherstCoords = [37.6100, -79.1400];
-        const map = L.map('map', { zoomControl: true }).setView(amherstCoords, 11);
+        // Exact Amherst County, Virginia coordinates (Central Amherst Courthouse / County Area)
+        const amherstCoords = [37.5855, -79.0505];
+        const map = L.map('map', { zoomControl: true }).setView(amherstCoords, 12);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -584,10 +584,10 @@
 
         function createGridOverlay() {
             const sectors = [
-                { name: "Amherst Sector A1", coords: [[37.6100, -79.1600], [37.6500, -79.1200]] },
-                { name: "Amherst Sector A2", coords: [[37.6100, -79.1200], [37.6500, -79.0800]] },
-                { name: "Amherst Sector B1", coords: [[37.5700, -79.1600], [37.6100, -79.1200]] },
-                { name: "Amherst Sector B2", coords: [[37.5700, -79.1200], [37.5700, -79.0800]] }
+                { name: "Amherst Sector A1", coords: [[37.6000, -79.0800], [37.6400, -79.0400]] },
+                { name: "Amherst Sector A2", coords: [[37.6000, -79.0400], [37.6400, -79.0000]] },
+                { name: "Amherst Sector B1", coords: [[37.5600, -79.0800], [37.6000, -79.0400]] },
+                { name: "Amherst Sector B2", coords: [[37.5600, -79.0400], [37.6000, -79.0000]] }
             ];
             sectors.forEach(sec => {
                 let rect = L.rectangle(sec.coords, {
@@ -744,7 +744,7 @@
         }
 
         function goBackView() {
-            map.setView(amherstCoords, 11);
+            map.setView(amherstCoords, 12);
             alert("Returned to Command Overview Matrix.");
         }
 
