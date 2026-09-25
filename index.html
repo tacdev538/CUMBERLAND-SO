@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Amherst County Sheriff's Office — Search and Rescue (TACNET)</title>
+    <title>Cumberland County Sheriff's Office — Search and Rescue (TACNET)</title>
     <!-- Leaflet CSS for Mapping -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -557,11 +557,11 @@
     <div class="modal-overlay" id="loginModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Amherst County Sheriff's Office</h2>
+                <h2>Cumberland County Sheriff's Office</h2>
                 <p>TACNET SAR Command Authentication & GPS Engagement</p>
             </div>
             <div class="security-banner">
-                🔒 RESTRICTED LAW ENFORCEMENT SYSTEM (Sheriff L.J. "Jimmy" Ayers III)
+                🔒 RESTRICTED LAW ENFORCEMENT SYSTEM (Sheriff Darrell L. Hodges)
             </div>
             <div class="login-form-group">
                 <label>Officer Name & Rank:</label>
@@ -594,8 +594,8 @@
 
     <header>
         <div class="header-title">
-            <h1>Amherst County Sheriff's Office</h1>
-            <p><span class="sys-pulse-dot"></span> TACNET SAR Command Matrix (Amherst, VA)</p>
+            <h1>Cumberland County Sheriff's Office</h1>
+            <p><span class="sys-pulse-dot"></span> TACNET SAR Command Matrix (Cumberland, VA)</p>
         </div>
         <div class="operator-badge" id="headerOperatorBadge">
             Authentication Required
@@ -626,7 +626,7 @@
             </div>
 
             <div class="security-banner">
-                🔒 EXCLUSIVE PROPERTY: Amherst County S.O.
+                🔒 EXCLUSIVE PROPERTY: Cumberland County S.O.
             </div>
 
             <div class="panel-section">
@@ -655,7 +655,7 @@
             <div class="panel-section">
                 <h2>Address Search & Perimeter</h2>
                 <div class="search-box-group">
-                    <input type="text" id="addressInput" class="search-input" placeholder="Enter Amherst road/location...">
+                    <input type="text" id="addressInput" class="search-input" placeholder="Enter Cumberland road/location...">
                     <button class="go-btn" onclick="searchAddressAndPerimeter()">GO</button>
                 </div>
                 <div class="perimeter-control" id="perimeterBox" style="display:none;">
@@ -682,7 +682,7 @@
             <div class="panel-section">
                 <h2>Active Units</h2>
                 <ul class="log-box" id="activeGpsList">
-                    <li><span>Amherst S.O. Command</span> <span class="telemetry-blink">ACTIVE</span></li>
+                    <li><span>Cumberland S.O. Command</span> <span class="telemetry-blink">ACTIVE</span></li>
                 </ul>
             </div>
 
@@ -703,7 +703,7 @@
         <div class="modal-content" style="background:#fff; color:#111; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header" style="border-bottom:2px solid #333;">
                 <div>
-                    <h2 style="color:#111;">Amherst County Sheriff's Office</h2>
+                    <h2 style="color:#111;">Cumberland County Sheriff's Office</h2>
                     <p style="font-size:0.7rem; color:#555;">Official TACNET Verbal-Dictated Search & Rescue Report</p>
                 </div>
                 <div style="text-align:right; font-size:0.7rem;">
@@ -726,7 +726,7 @@
 
             <div id="finalReportContainer" style="display:none;">
                 <div class="report-section">
-                    <b>Incident Summary:</b> Active Road & Search Operation | Amherst County, VA<br>
+                    <b>Incident Summary:</b> Active Road & Search Operation | Cumberland County, VA<br>
                     <b>Reporting Officer:</b> <span id="repOfficerName">Unit Active / Deputy</span><br>
                     <b>Operation Status:</b> Active / Managed via TACNET Matrix
                 </div>
@@ -759,8 +759,8 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const amherstDefaultCoords = [37.5858, -79.0377];
-        const map = L.map('map', { zoomControl: true }).setView(amherstDefaultCoords, 12);
+        const cumberlandDefaultCoords = [37.5054, -78.2255];
+        const map = L.map('map', { zoomControl: true }).setView(cumberlandDefaultCoords, 12);
 
         // ESRI World Topographic Map / Street Map layer
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
@@ -768,12 +768,12 @@
             attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, increment P Corporation, and the GIS User Community'
         }).addTo(map);
 
-        const incidentMarker = L.circleMarker(amherstDefaultCoords, {
+        const incidentMarker = L.circleMarker(cumberlandDefaultCoords, {
             radius: 10,
             color: '#D4AF37',
             fillColor: '#FFD700',
             fillOpacity: 0.9
-        }).addTo(map).bindPopup("<b>Amherst County S.O. Command</b><br>TACNET Base Operations");
+        }).addTo(map).bindPopup("<b>Cumberland County S.O. Command</b><br>TACNET Base Operations");
 
         let searchGridLayer = L.layerGroup().addTo(map);
         const globalTimestampedLogs = [];
@@ -782,7 +782,7 @@
             const now = new Date();
             const dateStr = now.toLocaleDateString();
             const timeStr = now.toLocaleTimeString();
-            const locationStr = lastKnownLocationName || "Amherst Base, VA";
+            const locationStr = lastKnownLocationName || "Cumberland Base, VA";
             
             const logEntry = {
                 date: dateStr,
@@ -802,10 +802,10 @@
 
         function createGridOverlay() {
             const sectors = [
-                { name: "Amherst Sector A1", coords: [[37.6100, -79.0700], [37.6500, -79.0100]] },
-                { name: "Amherst Sector A2", coords: [[37.6100, -79.0100], [37.6500, -78.9500]] },
-                { name: "Amherst Sector B1", coords: [[37.5500, -79.0700], [37.6100, -79.0100]] },
-                { name: "Amherst Sector B2", coords: [[37.5500, -79.0100], [37.6100, -78.9500]] }
+                { name: "Cumberland Sector A1", coords: [[37.5300, -78.2600], [37.5800, -78.1900]] },
+                { name: "Cumberland Sector A2", coords: [[37.5300, -78.1900], [37.5800, -78.1200]] },
+                { name: "Cumberland Sector B1", coords: [[37.4700, -78.2600], [37.5300, -78.1900]] },
+                { name: "Cumberland Sector B2", coords: [[37.4700, -78.1900], [37.5300, -78.1200]] }
             ];
             sectors.forEach(sec => {
                 let rect = L.rectangle(sec.coords, {
@@ -817,7 +817,7 @@
                 }).bindPopup(`<b>Sector Designation:</b> ${sec.name}`);
                 searchGridLayer.addLayer(rect);
             });
-            logTimestampedEvent("Grid overlay initialized for Amherst Sectors.");
+            logTimestampedEvent("Grid overlay initialized for Cumberland Sectors.");
         }
         createGridOverlay();
 
@@ -826,7 +826,7 @@
         const activeUnitsMap = {}; 
         let loggedInOfficerName = "";
         let lastKnownUserLatLng = null;
-        let lastKnownLocationName = "Amherst, VA";
+        let lastKnownLocationName = "Cumberland, VA";
         let activeWatchId = null;
         let activeTrackingUnitId = null;
         let manualLatOffset = 0;
@@ -1009,7 +1009,7 @@
 
         function updateActiveGpsList() {
             const list = document.getElementById('activeGpsList');
-            list.innerHTML = '<li><span>Amherst S.O. Command</span> <span class="telemetry-blink">ACTIVE</span></li>';
+            list.innerHTML = '<li><span>Cumberland S.O. Command</span> <span class="telemetry-blink">ACTIVE</span></li>';
             for (let uId in activeUnitsMap) {
                 const li = document.createElement('li');
                 li.innerHTML = `<span>Unit ${uId} (${activeUnitsMap[uId].officer})</span> <span class="telemetry-blink">LIVE</span>`;
@@ -1046,7 +1046,7 @@
             if (searchedPerimeterCircle) searchedPerimeterCircle.setRadius(currentPerimeterRadius);
         }
 
-        function goBackView() { map.setView(amherstDefaultCoords, 12); }
+        function goBackView() { map.setView(cumberlandDefaultCoords, 12); }
 
         function terminateSearchOperation() {
             if (confirm("Are you sure you want to terminate the active operation?")) {
@@ -1066,8 +1066,8 @@
                     b.classList.remove('officer-down-unit');
                 });
 
-                document.getElementById('activeGpsList').innerHTML = '<li><span>Amherst S.O. Command</span> <span style="color:#888;">TERMINATED</span></li>';
-                map.setView(amherstDefaultCoords, 12);
+                document.getElementById('activeGpsList').innerHTML = '<li><span>Cumberland S.O. Command</span> <span style="color:#888;">TERMINATED</span></li>';
+                map.setView(cumberlandDefaultCoords, 12);
                 logTimestampedEvent("Operation terminated.");
                 alert("Operation terminated.");
             }
