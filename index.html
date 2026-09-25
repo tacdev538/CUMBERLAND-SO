@@ -179,7 +179,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Exclusive Department Notice */
         .security-banner {
             background: rgba(212, 175, 55, 0.15);
             border: 1px solid var(--tactical-gold);
@@ -192,7 +191,6 @@
             font-weight: bold;
         }
 
-        /* Search Box Elements */
         .search-box-group {
             display: flex;
             gap: 4px;
@@ -224,7 +222,6 @@
             background-color: var(--tactical-light-gold);
         }
 
-        /* Perimeter Slider Control */
         .perimeter-control {
             background: rgba(0,0,0,0.3);
             border: 1px solid var(--neon-green);
@@ -247,7 +244,6 @@
             accent-color: var(--neon-green);
         }
 
-        /* Action Buttons */
         .tactical-btn {
             background-color: var(--tactical-od);
             color: var(--tactical-gold);
@@ -269,7 +265,6 @@
             color: var(--bg-dark);
         }
 
-        /* Terminator Navigation Buttons */
         .nav-button-group {
             display: flex;
             gap: 5px;
@@ -306,7 +301,6 @@
             color: #fff;
         }
 
-        /* Emergency Officer Down Button */
         .emergency-btn {
             background-color: var(--alert-red);
             color: #ffffff;
@@ -335,7 +329,6 @@
             transition: width 0.05s linear;
         }
 
-        /* Logs Lists */
         .log-box {
             list-style: none;
             font-size: 0.7rem;
@@ -354,14 +347,12 @@
             justify-content: space-between;
         }
 
-        /* Map Viewport */
         #map {
             flex: 1;
             height: 100%;
             background-color: #111;
         }
 
-        /* Blinking Beacon CSS on Map */
         .blinking-gps-beacon {
             background-color: var(--neon-green);
             border: 2px solid #ffffff;
@@ -381,7 +372,6 @@
             100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 25px var(--neon-green); }
         }
 
-        /* Printable Report Modal */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -568,9 +558,10 @@
         const amherstCoords = [37.5855, -79.0505];
         const map = L.map('map', { zoomControl: true }).setView(amherstCoords, 12);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Esri World Imagery (Satellite) - Free public server, zero API keys, zero watermarks, zero blocking
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
         }).addTo(map);
 
         const incidentMarker = L.circleMarker(amherstCoords, {
@@ -587,7 +578,7 @@
                 { name: "Amherst Sector A1", coords: [[37.6000, -79.0800], [37.6400, -79.0400]] },
                 { name: "Amherst Sector A2", coords: [[37.6000, -79.0400], [37.6400, -79.0000]] },
                 { name: "Amherst Sector B1", coords: [[37.5600, -79.0800], [37.6000, -79.0400]] },
-                { name: "Amherst Sector B2", coords: [[37.5600, -79.0400], [37.6000, -79.0000]] }
+                { name: "Amherst Sector B2", coords: [[37.5600, -79.0400], [37.5600, -79.0000]] }
             ];
             sectors.forEach(sec => {
                 let rect = L.rectangle(sec.coords, {
@@ -617,7 +608,6 @@
             unitGridContainer.appendChild(btn);
         }
 
-        // Global Geocoding for Search Box
         async function geocodeAddress(addressStr) {
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressStr)}`);
@@ -631,7 +621,6 @@
             return null;
         }
 
-        // Reverse Geocode coordinates to automatically get the location name
         async function reverseGeocode(lat, lon) {
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
@@ -645,7 +634,6 @@
             return `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
         }
 
-        // Automatically activate live device GPS for the selected unit
         async function activateUnitDeviceGPS(unitId) {
             if (!navigator.geolocation) {
                 alert("Geolocation is not supported by your browser.");
@@ -659,7 +647,6 @@
                 const lon = position.coords.longitude;
                 const unitLatLng = [lat, lon];
 
-                // Automatically lookup the address name from coordinates
                 let locationName = await reverseGeocode(lat, lon);
 
                 const btn = document.getElementById(`unitBtn_${unitId}`);
