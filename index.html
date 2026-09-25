@@ -250,6 +250,19 @@
             animation: pulse-badge 1s infinite alternate;
         }
 
+        /* Officer Down Emergency Unit State Styling */
+        .unit-badge-btn.officer-down-unit {
+            background-color: var(--alert-red) !important;
+            color: #ffffff !important;
+            border-color: #FFD700 !important;
+            animation: flash-emergency-badge 0.4s infinite alternate !important;
+        }
+
+        @keyframes flash-emergency-badge {
+            0% { transform: scale(0.9); box-shadow: 0 0 4px #FF0000; opacity: 0.5; }
+            100% { transform: scale(1.15); box-shadow: 0 0 18px #FF0000; opacity: 1; }
+        }
+
         @keyframes pulse-badge {
             0% { transform: scale(0.95); box-shadow: 0 0 4px rgba(0, 255, 102, 0.6); }
             100% { transform: scale(1.08); box-shadow: 0 0 14px rgba(0, 255, 102, 1); }
@@ -381,19 +394,12 @@
             border-radius: 3px;
             cursor: pointer;
             margin-bottom: 5px;
-            position: relative;
-            overflow: hidden;
             box-shadow: 0 0 6px rgba(211, 47, 47, 0.6);
         }
 
-        .hold-progress {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 2px;
-            background-color: #FFD700;
-            width: 0%;
-            transition: width 0.05s linear;
+        .emergency-btn:active {
+            background-color: #FF0000;
+            transform: scale(0.98);
         }
 
         .log-box {
@@ -428,6 +434,19 @@
             color: #000;
             font-weight: bold;
             font-size: 9px;
+        }
+
+        .officer-down-beacon {
+            background-color: var(--alert-red) !important;
+            border: 2px solid #FFD700 !important;
+            box-shadow: 0 0 20px #FF0000 !important;
+            animation: beacon-flash-red 0.4s infinite alternate !important;
+            color: #FFF !important;
+        }
+
+        @keyframes beacon-flash-red {
+            0% { transform: scale(0.85); opacity: 0.6; }
+            100% { transform: scale(1.35); opacity: 1; box-shadow: 0 0 30px #FF0000; }
         }
 
         @keyframes beacon-pulse {
@@ -575,9 +594,8 @@
                 <button class="tactical-btn" style="background-color: #384018;" onclick="signInOutsideAgency()">📝 Agency Sign-In</button>
                 <button class="tactical-btn" style="background-color: #2E5B88;" onclick="openReportModal()">📋 Itemized Report</button>
                 
-                <button class="emergency-btn" id="emergencyBtn">
-                    🚨 HOLD 2s: OFFICER DOWN
-                    <div class="hold-progress" id="holdProgress"></div>
+                <button class="emergency-btn" id="emergencyBtn" onclick="triggerOfficerDownEmergency()">
+                    🚨 OFFICER DOWN (SOS)
                 </button>
             </div>
 
@@ -739,22 +757,18 @@
                 return;
             }
 
-            // Clear previous watch if active
             if (activeWatchId !== null) {
                 navigator.geolocation.clearWatch(activeWatchId);
             }
 
-            // Remove active style from all units, add to selected
             document.querySelectorAll('.unit-badge-btn').forEach(b => b.classList.remove('active-unit'));
             document.getElementById(`unitBtn_${unitId}`).classList.add('active-unit');
             activeTrackingUnitId = unitId;
 
-            // Use continuous high-accuracy watchPosition to lock onto real-time satellite fixes
             activeWatchId = navigator.geolocation.watchPosition(async (position) => {
                 const rawLat = position.coords.latitude;
                 const rawLon = position.coords.longitude;
                 
-                // Apply manual calibration offsets if adjusted
                 const lat = rawLat + manualLatOffset;
                 const lon = rawLon + manualLonOffset;
                 
@@ -779,13 +793,41 @@
                 activeUnitsMap[unitId] = { location: locationName, time: new Date().toLocaleTimeString() };
                 updateActiveGpsList();
                 
-                // Snap map straight to exact boots location at high zoom (18)
                 map.setView(unitLatLng, 18);
             }, (error) => { 
                 console.error("GPS Watch Error:", error);
             }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
 
             alert(`Unit ${unitId} continuous high-accuracy tracking engaged!`);
+        }
+
+        function triggerOfficerDownEmergency() {
+            if (!activeTrackingUnitId) {
+                alert("⚠️ Please select/activate your Unit number in the right drawer first before triggering Officer Down!");
+                toggleUnitDrawer();
+                return;
+            }
+
+            // Immediately turn the active unit badge red and flash
+            const unitBtn = document.getElementById(`unitBtn_${activeTrackingUnitId}`);
+            if (unitBtn) {
+                unitBtn.classList.remove('active-unit');
+                unitBtn.classList.add('officer-down-unit');
+            }
+
+            // Update map beacon styling to flashing red emergency state
+            if (unitMarkers[activeTrackingUnitId]) {
+                const emergencyBeaconIcon = L.divIcon({
+                    className: 'blinking-gps-beacon officer-down-beacon',
+                    html: `<span>SOS-${activeTrackingUnitId}</span>`,
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18]
+                });
+                unitMarkers[activeTrackingUnitId].setIcon(emergencyBeaconIcon);
+                unitMarkers[activeTrackingUnitId].bindPopup(`<b>🚨 EMERGENCY: OFFICER DOWN!</b><br><b>Unit:</b> ${activeTrackingUnitId}<br><b>Status:</b> IMMEDIATE ASSISTANCE REQUIRED`).openPopup();
+            }
+
+            alert(`🚨 EMERGENCY SOS BROADCASTED FOR UNIT ${activeTrackingUnitId}! UNIT BADGE & MAP BEACON FLASHING RED.`);
         }
 
         function applyGpsOffset(latDelta, lonDelta) {
@@ -862,18 +904,15 @@
 
         function terminateSearchOperation() {
             if (confirm("Are you sure you want to terminate the active operation? This will clear all tracking and reset telemetry.")) {
-                // Stop GPS geolocation watch
                 if (activeWatchId !== null) {
                     navigator.geolocation.clearWatch(activeWatchId);
                     activeWatchId = null;
                 }
                 
-                // Remove all active unit markers from map
                 for (let uId in unitMarkers) {
                     map.removeLayer(unitMarkers[uId]);
                 }
 
-                // Reset trackers & UI states
                 Object.keys(unitMarkers).forEach(k => delete unitMarkers[k]);
                 Object.keys(activeUnitsMap).forEach(k => delete activeUnitsMap[k]);
                 activeTrackingUnitId = null;
@@ -881,16 +920,14 @@
                 manualLatOffset = 0;
                 manualLonOffset = 0;
 
-                // Clear active unit styling
-                document.querySelectorAll('.unit-badge-btn').forEach(b => b.classList.remove('active-unit'));
+                document.querySelectorAll('.unit-badge-btn').forEach(b => {
+                    b.classList.remove('active-unit');
+                    b.classList.remove('officer-down-unit');
+                });
 
-                // Reset lists
                 document.getElementById('activeGpsList').innerHTML = '<li><span>Cumberland S.O. Command</span> <span style="color:#888;">TERMINATED</span></li>';
 
-                // Reset map view to command base
                 map.setView(cumberlandDefaultCoords, 12);
-
-                // Close command panel
                 toggleCommandPanel();
 
                 alert("Operation successfully terminated and telemetry cleared.");
@@ -925,28 +962,6 @@
 
         function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; }
         function emailReportDraft() { alert("Report prepared for email dispatch."); }
-
-        const emergencyBtn = document.getElementById('emergencyBtn');
-        const holdProgress = document.getElementById('holdProgress');
-        let holdTimer = null, progressInterval = null;
-
-        emergencyBtn.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            let start = Date.now();
-            progressInterval = setInterval(() => {
-                let pct = Math.min(100, ((Date.now() - start) / 2000) * 100);
-                holdProgress.style.width = pct + '%';
-            }, 30);
-            holdTimer = setTimeout(() => { alert("🚨 OFFICER DOWN ALERT BROADCASTED!"); }, 2000);
-        });
-
-        ['mouseup', 'mouseleave', 'touchend'].forEach(evt => {
-            emergencyBtn.addEventListener(evt, () => {
-                clearTimeout(holdTimer);
-                clearInterval(progressInterval);
-                holdProgress.style.width = '0%';
-            });
-        });
 
         function assignSectorGrid() { alert("Cumberland Grid Matrix Active."); }
     </script>
