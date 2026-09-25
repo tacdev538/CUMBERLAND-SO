@@ -780,7 +780,8 @@
         let manualLatOffset = 0;
         let manualLonOffset = 0;
 
-        for (let i = 1; i <= 30; i++) {
+        // Exactly Unit 1 to 15 as requested
+        for (let i = 1; i <= 15; i++) {
             const btn = document.createElement('button');
             btn.className = 'unit-badge-btn';
             btn.id = `unitBtn_${i}`;
