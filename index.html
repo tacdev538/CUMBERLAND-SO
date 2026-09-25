@@ -62,7 +62,6 @@
             gap: 6px;
         }
 
-        /* System Heartbeat Indicator */
         .sys-pulse-dot {
             width: 8px;
             height: 8px;
@@ -97,7 +96,7 @@
             font-weight: normal;
         }
 
-        /* Main Container: Map takes full width/height */
+        /* Main Container */
         .main-container {
             display: flex;
             flex: 1;
@@ -116,7 +115,7 @@
             z-index: 1;
         }
 
-        /* Floating Navigation Toggle & Quick Unit Dock */
+        /* Floating Navigation Toggle */
         .floating-nav-bar {
             position: absolute;
             top: 10px;
@@ -145,7 +144,7 @@
             color: var(--bg-dark);
         }
 
-        /* PROMINENT ALWAYS-VISIBLE TOP UNIT DOCK */
+        /* PROMINENT TOP UNIT DOCK */
         .top-unit-dock {
             position: absolute;
             top: 10px;
@@ -452,11 +451,11 @@
         }
 
         .modal-overlay {
-            display: none;
+            display: flex;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 2000;
+            background: rgba(0,0,0,0.92);
+            z-index: 3000;
             justify-content: center;
             align-items: center;
         }
@@ -466,23 +465,67 @@
             border: 2px solid var(--tactical-gold);
             color: var(--text-light);
             width: 90%;
-            max-width: 550px;
-            padding: 15px;
-            border-radius: 4px;
+            max-width: 420px;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
         .modal-header {
             border-bottom: 1px solid var(--tactical-gold);
-            padding-bottom: 6px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            text-align: center;
         }
 
         .modal-header h2 {
             color: var(--tactical-gold);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+        }
+
+        .modal-header p {
+            font-size: 0.65rem;
+            color: var(--tactical-light-gold);
+            margin-top: 3px;
+        }
+
+        .login-form-group {
+            margin-bottom: 12px;
+        }
+
+        .login-form-group label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--tactical-gold);
+            font-weight: bold;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .login-input, .login-select {
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--tactical-gold);
+            color: #fff;
+            padding: 8px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+
+        .login-btn {
+            background-color: var(--neon-green);
+            color: var(--bg-dark);
+            border: 2px solid var(--tactical-gold);
+            padding: 10px;
+            width: 100%;
+            font-weight: bold;
             font-size: 0.85rem;
+            text-transform: uppercase;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 6px;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
         }
 
         .report-section {
@@ -510,14 +553,52 @@
 </head>
 <body>
 
+    <!-- MANDATORY OFFICER LOGIN MODAL ON STARTUP -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Cumberland County Sheriff's Office</h2>
+                <p>TACNET SAR Command Authentication & GPS Engagement</p>
+            </div>
+            <div class="security-banner">
+                🔒 RESTRICTED LAW ENFORCEMENT SYSTEM
+            </div>
+            <div class="login-form-group">
+                <label>Officer Name & Rank:</label>
+                <input type="text" id="loginOfficerName" class="login-input" placeholder="e.g. Dep. J. Miller">
+            </div>
+            <div class="login-form-group">
+                <label>Assign Unit Number (1 - 15):</label>
+                <select id="loginUnitSelect" class="login-select">
+                    <option value="1">Unit 1</option>
+                    <option value="2">Unit 2</option>
+                    <option value="3">Unit 3</option>
+                    <option value="4">Unit 4</option>
+                    <option value="5">Unit 5</option>
+                    <option value="6">Unit 6</option>
+                    <option value="7">Unit 7</option>
+                    <option value="8">Unit 8</option>
+                    <option value="9">Unit 9</option>
+                    <option value="10">Unit 10</option>
+                    <option value="11">Unit 11</option>
+                    <option value="12">Unit 12</option>
+                    <option value="13">Unit 13</option>
+                    <option value="14">Unit 14</option>
+                    <option value="15">Unit 15</option>
+                </select>
+            </div>
+            <button class="login-btn" onclick="authenticateAndEngageGPS()">🔑 Authenticate & Go Live on Map</button>
+        </div>
+    </div>
+
     <header>
         <div class="header-title">
             <h1>Cumberland County Sheriff's Office</h1>
             <p><span class="sys-pulse-dot"></span> TACNET SAR Command Matrix (Cumberland, VA)</p>
         </div>
-        <div class="operator-badge">
-            Earl A. Wood, Deputy Sheriff (Ret.)
-            <span>System Creator</span>
+        <div class="operator-badge" id="headerOperatorBadge">
+            Authentication Required
+            <span>System Login Pending</span>
         </div>
     </header>
 
@@ -617,7 +698,7 @@
     </div>
 
     <!-- Printable & Voice-Controlled Report Modal -->
-    <div class="modal-overlay" id="reportModal">
+    <div class="modal-overlay" id="reportModal" style="display:none;">
         <div class="modal-content" style="background:#fff; color:#111; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header" style="border-bottom:2px solid #333;">
                 <div>
@@ -742,6 +823,7 @@
         const unitGridContainer = document.getElementById('unitGridContainer');
         const unitMarkers = {}; 
         const activeUnitsMap = {}; 
+        let loggedInOfficerName = "";
         let lastKnownUserLatLng = null;
         let lastKnownLocationName = "Cumberland, VA";
         let activeWatchId = null;
@@ -749,15 +831,35 @@
         let manualLatOffset = 0;
         let manualLonOffset = 0;
 
-        // Populate Units 1 to 15 in the prominent top bar dock
+        // Populate Units 1 to 15 in top dock
         for (let i = 1; i <= 15; i++) {
             const btn = document.createElement('button');
             btn.className = 'unit-badge-btn';
             btn.id = `unitBtn_${i}`;
             btn.innerText = i;
-            btn.title = `Unit ${i} - Tap to Engage GPS`;
+            btn.title = `Unit ${i} - Tap to Switch GPS`;
             btn.onclick = () => activateUnitDeviceGPS(i);
             unitGridContainer.appendChild(btn);
+        }
+
+        function authenticateAndEngageGPS() {
+            const nameInput = document.getElementById('loginOfficerName').value.trim();
+            const unitSelect = document.getElementById('loginUnitSelect').value;
+
+            if (!nameInput) {
+                alert("⚠️ Please enter your Officer Name & Rank to proceed.");
+                return;
+            }
+
+            loggedInOfficerName = nameInput;
+            activeTrackingUnitId = parseInt(unitSelect);
+
+            document.getElementById('headerOperatorBadge').innerHTML = `${loggedInOfficerName} <span>Unit ${activeTrackingUnitId} Active</span>`;
+            document.getElementById('loginModal').style.display = 'none';
+
+            // Instantly engage GPS tracking for this officer & unit
+            activateUnitDeviceGPS(activeTrackingUnitId);
+            logTimestampedEvent(`Officer ${loggedInOfficerName} logged in and engaged Unit ${activeTrackingUnitId} GPS.`, activeTrackingUnitId);
         }
 
         function toggleCommandPanel() {
@@ -796,7 +898,7 @@
             const targetBtn = document.getElementById(`unitBtn_${unitId}`);
             if (targetBtn) targetBtn.classList.add('active-unit');
             activeTrackingUnitId = unitId;
-            document.getElementById('activeUnitStatusText').innerText = `Unit ${unitId} Active (Tracking Road/GPS)`;
+            document.getElementById('activeUnitStatusText').innerText = `Unit ${unitId} (${loggedInOfficerName || 'Officer'}) Active`;
 
             activeWatchId = navigator.geolocation.watchPosition(async (position) => {
                 const rawLat = position.coords.latitude;
@@ -820,10 +922,10 @@
 
                 const marker = L.marker(unitLatLng, { icon: beaconIcon })
                     .addTo(map)
-                    .bindPopup(`<b>🟢 LIVE ROAD SAT LOCK</b><br><b>Unit:</b> ${unitId}<br><b>Pos:</b> ${lastKnownLocationName}`);
+                    .bindPopup(`<b>🟢 LIVE ROAD SAT LOCK</b><br><b>Officer:</b> ${loggedInOfficerName || 'Deputy'}<br><b>Unit:</b> ${unitId}<br><b>Pos:</b> ${lastKnownLocationName}`);
 
                 unitMarkers[unitId] = marker;
-                activeUnitsMap[unitId] = { location: lastKnownLocationName, time: new Date().toLocaleTimeString() };
+                activeUnitsMap[unitId] = { officer: loggedInOfficerName, location: lastKnownLocationName, time: new Date().toLocaleTimeString() };
                 updateActiveGpsList();
                 
                 map.setView(unitLatLng, 18);
@@ -831,14 +933,11 @@
                 console.error("GPS Watch Error:", error);
                 alert("GPS fix timeout or denied. Please check device location permissions.");
             }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-
-            logTimestampedEvent(`Unit ${unitId} GPS tracking engaged.`, unitId);
-            alert(`Unit ${unitId} continuous high-accuracy GPS tracking engaged. Map locked to your road position!`);
         }
 
         function triggerOfficerDownEmergency() {
             if (!activeTrackingUnitId) {
-                alert("⚠️ Please select your Unit number from the top dock first before triggering Officer Down!");
+                alert("⚠️ No active unit selected.");
                 return;
             }
 
@@ -856,18 +955,15 @@
                     iconAnchor: [20, 20]
                 });
                 unitMarkers[activeTrackingUnitId].setIcon(emergencyBeaconIcon);
-                unitMarkers[activeTrackingUnitId].bindPopup(`<b>🚨 EMERGENCY: OFFICER DOWN!</b><br><b>Unit:</b> ${activeTrackingUnitId}<br><b>Status:</b> IMMEDIATE ASSISTANCE REQUIRED`).openPopup();
+                unitMarkers[activeTrackingUnitId].bindPopup(`<b>🚨 EMERGENCY: OFFICER DOWN!</b><br><b>Officer:</b> ${loggedInOfficerName}<br><b>Unit:</b> ${activeTrackingUnitId}<br><b>Status:</b> IMMEDIATE ASSISTANCE REQUIRED`).openPopup();
             }
 
             logTimestampedEvent(`🚨 OFFICER DOWN EMERGENCY SOS TRIGGERED!`, activeTrackingUnitId);
-            alert(`🚨 EMERGENCY SOS BROADCASTED FOR UNIT ${activeTrackingUnitId}!`);
+            alert(`🚨 EMERGENCY SOS BROADCASTED FOR UNIT ${activeTrackingUnitId} (${loggedInOfficerName})!`);
         }
 
         function resetOfficerDownEmergency() {
-            if (!activeTrackingUnitId) {
-                alert("⚠️ No active unit selected to reset.");
-                return;
-            }
+            if (!activeTrackingUnitId) return;
 
             const unitBtn = document.getElementById(`unitBtn_${activeTrackingUnitId}`);
             if (unitBtn) {
@@ -895,27 +991,18 @@
             manualLonOffset += lonDelta;
             if (lastKnownUserLatLng && activeTrackingUnitId) {
                 activateUnitDeviceGPS(activeTrackingUnitId);
-            } else {
-                alert("Offset adjusted. Tap your Unit badge in the top dock to refresh.");
             }
         }
 
         function resetGpsOffset() {
             manualLatOffset = 0;
             manualLonOffset = 0;
-            if (activeTrackingUnitId) {
-                activateUnitDeviceGPS(activeTrackingUnitId);
-            } else {
-                alert("GPS Offset reset.");
-            }
+            if (activeTrackingUnitId) activateUnitDeviceGPS(activeTrackingUnitId);
         }
 
         function panToMyLiveGPS() {
-            if (lastKnownUserLatLng) {
-                map.setView(lastKnownUserLatLng, 18);
-            } else {
-                alert("Select a Unit number in the top dock (1-15) to start GPS tracking.");
-            }
+            if (lastKnownUserLatLng) map.setView(lastKnownUserLatLng, 18);
+            else alert("GPS lock acquiring...");
         }
 
         function updateActiveGpsList() {
@@ -923,7 +1010,7 @@
             list.innerHTML = '<li><span>Cumberland S.O. Command</span> <span class="telemetry-blink">ACTIVE</span></li>';
             for (let uId in activeUnitsMap) {
                 const li = document.createElement('li');
-                li.innerHTML = `<span>Unit ${uId}</span> <span class="telemetry-blink">LIVE BEACON</span>`;
+                li.innerHTML = `<span>Unit ${uId} (${activeUnitsMap[uId].officer})</span> <span class="telemetry-blink">LIVE</span>`;
                 list.prepend(li);
             }
         }
@@ -1033,7 +1120,7 @@
 
         function openReportModal() {
             document.getElementById('reportTimestamp').innerText = `Generated: ${new Date().toLocaleString()}`;
-            document.getElementById('repOfficerName').innerText = activeTrackingUnitId ? `Unit ${activeTrackingUnitId}` : `Command`;
+            document.getElementById('repOfficerName').innerText = `${loggedInOfficerName} (Unit ${activeTrackingUnitId})`;
             document.getElementById('finalReportContainer').style.display = 'none';
             document.getElementById('printReportBtn').style.display = 'none';
             document.getElementById('emailReportBtn').style.display = 'none';
@@ -1045,7 +1132,7 @@
             repUnitList.innerHTML = '';
             for (let uId in activeUnitsMap) {
                 let li = document.createElement('li');
-                li.innerText = `Unit ${uId} - Location: ${activeUnitsMap[uId].location}`;
+                li.innerText = `Unit ${uId} (${activeUnitsMap[uId].officer}) - Location: ${activeUnitsMap[uId].location}`;
                 repUnitList.appendChild(li);
             }
             const repEvidenceList = document.getElementById('reportEvidenceList');
