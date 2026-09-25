@@ -536,7 +536,7 @@
             <div class="panel-section">
                 <div class="nav-button-group">
                     <button class="nav-btn" onclick="goBackView()">◀ Back</button>
-                    <button class="nav-btn" onclick="resetViewMatrix()">⟳ Reset</button>
+                    <button class="nav-btn" onclick="panToMyLiveGPS()">⟳ My GPS</button>
                     <button class="nav-btn terminate-btn" onclick="terminateSearchOperation()">🛑 End</button>
                 </div>
             </div>
@@ -636,15 +636,15 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const cumberlandCoords = [37.5055, -78.2163];
-        const map = L.map('map', { zoomControl: true }).setView(cumberlandCoords, 12);
+        const cumberlandDefaultCoords = [37.5055, -78.2163];
+        const map = L.map('map', { zoomControl: true }).setView(cumberlandDefaultCoords, 12);
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 19,
             attribution: 'Tiles &copy; Esri'
         }).addTo(map);
 
-        const incidentMarker = L.circleMarker(cumberlandCoords, {
+        const incidentMarker = L.circleMarker(cumberlandDefaultCoords, {
             radius: 10,
             color: '#D4AF37',
             fillColor: '#FFD700',
@@ -676,6 +676,7 @@
         const unitGridContainer = document.getElementById('unitGridContainer');
         const unitMarkers = {}; 
         const activeUnitsMap = {}; 
+        let lastKnownUserLatLng = null;
 
         for (let i = 1; i <= 30; i++) {
             const btn = document.createElement('button');
@@ -722,6 +723,7 @@
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
                 const unitLatLng = [lat, lon];
+                lastKnownUserLatLng = unitLatLng;
                 let locationName = await reverseGeocode(lat, lon);
 
                 const btn = document.getElementById(`unitBtn_${unitId}`);
@@ -732,20 +734,41 @@
                 const beaconIcon = L.divIcon({
                     className: 'blinking-gps-beacon',
                     html: `<span>U${unitId}</span>`,
-                    iconSize: [28, 28],
-                    iconAnchor: [14, 14]
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
                 });
 
                 const marker = L.marker(unitLatLng, { icon: beaconIcon })
                     .addTo(map)
-                    .bindPopup(`<b>🟢 LIVE GPS ACTIVE</b><br><b>Unit:</b> ${unitId}<br><b>Pos:</b> ${locationName}`);
+                    .bindPopup(`<b>🟢 LIVE GPS LOCKED</b><br><b>Unit:</b> ${unitId}<br><b>Pos:</b> ${locationName}`);
 
                 unitMarkers[unitId] = marker;
                 activeUnitsMap[unitId] = { location: locationName, time: new Date().toLocaleTimeString() };
                 updateActiveGpsList();
-                map.setView(unitLatLng, 15);
-                alert(`Unit ${unitId} GPS Active & Beacon Pulsing!`);
-            }, () => { alert("Unable to retrieve GPS position."); }, { enableHighAccuracy: true });
+                
+                // Immediately snap map straight to your location at close zoom (17)
+                map.setView(unitLatLng, 17);
+                alert(`Unit ${unitId} locked to your exact coordinates!`);
+            }, (error) => { 
+                alert("GPS Error: Unable to retrieve your position. Check device location permissions."); 
+                console.error(error);
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+        }
+
+        function panToMyLiveGPS() {
+            if (lastKnownUserLatLng) {
+                map.setView(lastKnownUserLatLng, 17);
+            } else {
+                // If no unit activated yet, fetch current GPS on the fly to center up
+                if (!navigator.geolocation) {
+                    alert("Geolocation not supported.");
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition((position) => {
+                    lastKnownUserLatLng = [position.coords.latitude, position.coords.longitude];
+                    map.setView(lastKnownUserLatLng, 17);
+                }, () => { alert("Unable to get current GPS position."); }, { enableHighAccuracy: true });
+            }
         }
 
         function updateActiveGpsList() {
@@ -786,8 +809,7 @@
             if (searchedPerimeterCircle) searchedPerimeterCircle.setRadius(currentPerimeterRadius);
         }
 
-        function goBackView() { map.setView(cumberlandCoords, 12); }
-        function resetViewMatrix() { map.setView(cumberlandCoords, 12); }
+        function goBackView() { map.setView(cumberlandDefaultCoords, 12); }
         function terminateSearchOperation() { if (confirm("Terminate operation?")) alert("Terminated."); }
         function signInOutsideAgency() { const name = prompt("Agency Name:"); if (name) alert(`Signed in: ${name}`); }
 
