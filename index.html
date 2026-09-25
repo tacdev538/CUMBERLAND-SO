@@ -402,6 +402,26 @@
             transform: scale(0.98);
         }
 
+        .reset-emergency-btn {
+            background-color: #2E5B88;
+            color: #ffffff;
+            border: 2px solid #FFD700;
+            padding: 8px;
+            width: 100%;
+            font-weight: bold;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            box-shadow: 0 0 6px rgba(46, 91, 136, 0.6);
+        }
+
+        .reset-emergency-btn:active {
+            background-color: #1E88E5;
+            transform: scale(0.98);
+        }
+
         .log-box {
             list-style: none;
             font-size: 0.65rem;
@@ -514,11 +534,11 @@
 
         .sig-line {
             width: 45%;
-            border-bottom: 1px solid #111;
+            border-top: 1px solid #111;
             margin-top: 20px;
             text-align: center;
             font-size: 0.65rem;
-            padding-bottom: 2px;
+            padding-top: 2px;
         }
     </style>
 </head>
@@ -592,10 +612,13 @@
                 <button class="tactical-btn" onclick="assignSectorGrid()">🗺️ Assign Grid</button>
                 <button class="tactical-btn" onclick="triggerEvidenceCapture()">📷 Log Photo / Article</button>
                 <button class="tactical-btn" style="background-color: #384018;" onclick="signInOutsideAgency()">📝 Agency Sign-In</button>
-                <button class="tactical-btn" style="background-color: #2E5B88;" onclick="openReportModal()">📋 Itemized Report</button>
+                <button class="tactical-btn" style="background-color: #2E5B88;" onclick="openReportModal()">📋 Verbal Dictation & Report</button>
                 
                 <button class="emergency-btn" id="emergencyBtn" onclick="triggerOfficerDownEmergency()">
                     🚨 OFFICER DOWN (SOS)
+                </button>
+                <button class="reset-emergency-btn" id="resetEmergencyBtn" onclick="resetOfficerDownEmergency()">
+                    🔄 RESET OFFICER DOWN
                 </button>
             </div>
 
@@ -607,7 +630,7 @@
             </div>
 
             <div class="panel-section">
-                <h2>Evidence Log</h2>
+                <h2>Timestamped Event Log</h2>
                 <ul class="log-box" id="evidenceList">
                     <li><span>LKP Point</span> <span style="color:#D4AF37;">00:00</span></li>
                 </ul>
@@ -625,42 +648,59 @@
         </div>
     </div>
 
-    <!-- Printable Report Modal -->
+    <!-- Printable & Voice-Controlled Report Modal -->
     <div class="modal-overlay" id="reportModal">
-        <div class="modal-content" id="printableReport" style="background:#fff; color:#111;">
+        <div class="modal-content" style="background:#fff; color:#111; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header" style="border-bottom:2px solid #333;">
                 <div>
                     <h2 style="color:#111;">Cumberland County Sheriff's Office</h2>
-                    <p style="font-size:0.7rem; color:#555;">Official TACNET Search & Rescue Incident Report</p>
+                    <p style="font-size:0.7rem; color:#555;">Official TACNET Verbal-Dictated Search & Rescue Report</p>
                 </div>
                 <div style="text-align:right; font-size:0.7rem;">
                     <span id="reportTimestamp"></span>
                 </div>
             </div>
 
-            <div class="report-section">
-                <b>Incident Summary:</b> Active Search Operation | Cumberland County, VA<br>
-                <b>Operation Status:</b> Active / Managed via TACNET Matrix
+            <div class="report-section" style="background: #f9f9f9; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                <h3 style="font-size:0.75rem; color:#1E88E5; margin-bottom:5px;">🎙️ Verbal Two-Way Dictation & Playback</h3>
+                <p style="font-size:0.65rem; color:#444; margin-bottom:8px;">Tap <b>Start Dictation</b> and speak your report. The system will transcribe live. When finished, tap <b>Stop & Read Back</b> to listen to the playback. Edit text if needed, then tap <b>Generate Final Report</b>.</p>
+                
+                <div style="display:flex; gap:6px; margin-bottom:8px;">
+                    <button class="go-btn" style="background-color:#2E5B88; color:#fff;" onclick="startVoiceDictation()">🎙️ Start Dictation</button>
+                    <button class="go-btn" style="background-color:#4B5320; color:#fff;" onclick="stopAndPlaybackReport()">🔊 Stop & Read Back</button>
+                </div>
+
+                <label style="font-size:0.65rem; font-weight:bold; display:block; margin-bottom:2px;">Verbatim Transcript / Editable Report Notes:</label>
+                <textarea id="dictatedNotesText" rows="5" style="width:100%; font-size:0.75rem; padding:6px; border:1px solid #ccc; border-radius:3px;" placeholder="Dictated text will appear here verbatim..."></textarea>
             </div>
 
-            <div class="report-section">
-                <h3 style="font-size:0.75rem; border-bottom:1px solid #333; margin-bottom:3px;">Active Live GPS Units</h3>
-                <ul id="reportUnitList" style="font-size:0.7rem; padding-left:15px;"></ul>
+            <div id="finalReportContainer" style="display:none;">
+                <div class="report-section">
+                    <b>Incident Summary:</b> Active Search Operation | Cumberland County, VA<br>
+                    <b>Reporting Officer:</b> <span id="repOfficerName">Unit Active / Deputy</span><br>
+                    <b>Operation Status:</b> Active / Managed via TACNET Matrix
+                </div>
+
+                <div class="report-section">
+                    <h3 style="font-size:0.75rem; border-bottom:1px solid #333; margin-bottom:3px;">Active Live GPS Units</h3>
+                    <ul id="reportUnitList" style="font-size:0.7rem; padding-left:15px;"></ul>
+                </div>
+
+                <div class="report-section">
+                    <h3 style="font-size:0.75rem; border-bottom:1px solid #333; margin-bottom:3px;">Timestamped Search Events & Evidence Log</h3>
+                    <ul id="reportEvidenceList" style="font-size:0.7rem; padding-left:15px;"></ul>
+                </div>
+
+                <div class="signature-block">
+                    <div class="sig-line">Primary Investigating Officer Signature</div>
+                    <div class="sig-line">Sheriff / Command Sign-Off</div>
+                </div>
             </div>
 
-            <div class="report-section">
-                <h3 style="font-size:0.75rem; border-bottom:1px solid #333; margin-bottom:3px;">Itemized Evidence & Photo Log</h3>
-                <ul id="reportEvidenceList" style="font-size:0.7rem; padding-left:15px;"></ul>
-            </div>
-
-            <div class="signature-block">
-                <div class="sig-line">Primary Investigating Officer Signature</div>
-                <div class="sig-line">Sheriff / Command Sign-Off</div>
-            </div>
-
-            <div style="margin-top:15px; text-align:right;">
-                <button class="go-btn" onclick="window.print()">🖨️ Print Report</button>
-                <button class="go-btn" style="background-color:#4B5320; color:#fff;" onclick="emailReportDraft()">📧 Email Report</button>
+            <div style="margin-top:15px; text-align:right; display:flex; gap:6px; justify-content: flex-end; flex-wrap: wrap;">
+                <button class="go-btn" style="background-color:#2E5B88; color:#fff;" onclick="generateFinalReport()">📋 Generate Final Report</button>
+                <button class="go-btn" id="printReportBtn" style="display:none;" onclick="window.print()">🖨️ Print Report</button>
+                <button class="go-btn" id="emailReportBtn" style="display:none; background-color:#4B5320; color:#fff;" onclick="emailReportDraft()">📧 Email Report</button>
                 <button class="go-btn" style="background-color:#D32F2F; color:#fff;" onclick="closeReportModal()">Close</button>
             </div>
         </div>
@@ -685,6 +725,29 @@
         }).addTo(map).bindPopup("<b>Cumberland County S.O. Command</b><br>TACNET Base Operations");
 
         let searchGridLayer = L.layerGroup().addTo(map);
+        const globalTimestampedLogs = [];
+
+        function logTimestampedEvent(description, unitId = "Command") {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString();
+            const timeStr = now.toLocaleTimeString();
+            const locationStr = lastKnownLocationName || "Cumberland Base, VA";
+            
+            const logEntry = {
+                date: dateStr,
+                time: timeStr,
+                officer: `Unit ${unitId}`,
+                location: locationStr,
+                desc: description
+            };
+
+            globalTimestampedLogs.push(logEntry);
+
+            const evidenceList = document.getElementById('evidenceList');
+            const li = document.createElement('li');
+            li.innerHTML = `<span>[${timeStr}] Unit ${unitId}: ${description} (${locationStr})</span> <span style="color:#D4AF37;">${dateStr}</span>`;
+            evidenceList.prepend(li);
+        }
 
         function createGridOverlay() {
             const sectors = [
@@ -703,6 +766,7 @@
                 }).bindPopup(`<b>Sector Designation:</b> ${sec.name}`);
                 searchGridLayer.addLayer(rect);
             });
+            logTimestampedEvent("Grid overlay initialized for Cumberland Sectors.");
         }
         createGridOverlay();
 
@@ -710,6 +774,7 @@
         const unitMarkers = {}; 
         const activeUnitsMap = {}; 
         let lastKnownUserLatLng = null;
+        let lastKnownLocationName = "Cumberland, VA";
         let activeWatchId = null;
         let activeTrackingUnitId = null;
         let manualLatOffset = 0;
@@ -774,7 +839,7 @@
                 
                 const unitLatLng = [lat, lon];
                 lastKnownUserLatLng = unitLatLng;
-                let locationName = await reverseGeocode(lat, lon);
+                lastKnownLocationName = await reverseGeocode(lat, lon);
 
                 if (unitMarkers[unitId]) map.removeLayer(unitMarkers[unitId]);
 
@@ -787,10 +852,10 @@
 
                 const marker = L.marker(unitLatLng, { icon: beaconIcon })
                     .addTo(map)
-                    .bindPopup(`<b>🟢 LIVE SAT LOCK</b><br><b>Unit:</b> ${unitId}<br><b>Pos:</b> ${locationName}`);
+                    .bindPopup(`<b>🟢 LIVE SAT LOCK</b><br><b>Unit:</b> ${unitId}<br><b>Pos:</b> ${lastKnownLocationName}`);
 
                 unitMarkers[unitId] = marker;
-                activeUnitsMap[unitId] = { location: locationName, time: new Date().toLocaleTimeString() };
+                activeUnitsMap[unitId] = { location: lastKnownLocationName, time: new Date().toLocaleTimeString() };
                 updateActiveGpsList();
                 
                 map.setView(unitLatLng, 18);
@@ -798,6 +863,7 @@
                 console.error("GPS Watch Error:", error);
             }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
 
+            logTimestampedEvent(`Unit ${unitId} GPS tracking engaged.`, unitId);
             alert(`Unit ${unitId} continuous high-accuracy tracking engaged!`);
         }
 
@@ -808,14 +874,12 @@
                 return;
             }
 
-            // Immediately turn the active unit badge red and flash
             const unitBtn = document.getElementById(`unitBtn_${activeTrackingUnitId}`);
             if (unitBtn) {
                 unitBtn.classList.remove('active-unit');
                 unitBtn.classList.add('officer-down-unit');
             }
 
-            // Update map beacon styling to flashing red emergency state
             if (unitMarkers[activeTrackingUnitId]) {
                 const emergencyBeaconIcon = L.divIcon({
                     className: 'blinking-gps-beacon officer-down-beacon',
@@ -827,7 +891,35 @@
                 unitMarkers[activeTrackingUnitId].bindPopup(`<b>🚨 EMERGENCY: OFFICER DOWN!</b><br><b>Unit:</b> ${activeTrackingUnitId}<br><b>Status:</b> IMMEDIATE ASSISTANCE REQUIRED`).openPopup();
             }
 
+            logTimestampedEvent(`🚨 OFFICER DOWN EMERGENCY SOS TRIGGERED!`, activeTrackingUnitId);
             alert(`🚨 EMERGENCY SOS BROADCASTED FOR UNIT ${activeTrackingUnitId}! UNIT BADGE & MAP BEACON FLASHING RED.`);
+        }
+
+        function resetOfficerDownEmergency() {
+            if (!activeTrackingUnitId) {
+                alert("⚠️ No active unit selected to reset.");
+                return;
+            }
+
+            const unitBtn = document.getElementById(`unitBtn_${activeTrackingUnitId}`);
+            if (unitBtn) {
+                unitBtn.classList.remove('officer-down-unit');
+                unitBtn.classList.add('active-unit');
+            }
+
+            if (unitMarkers[activeTrackingUnitId] && lastKnownUserLatLng) {
+                const normalBeaconIcon = L.divIcon({
+                    className: 'blinking-gps-beacon',
+                    html: `<span>U${activeTrackingUnitId}</span>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                });
+                unitMarkers[activeTrackingUnitId].setIcon(normalBeaconIcon);
+                unitMarkers[activeTrackingUnitId].bindPopup(`<b>🟢 LIVE SAT LOCK</b><br><b>Unit:</b> ${activeTrackingUnitId}<br><b>Status:</b> RESET / ALL CLEAR`);
+            }
+
+            logTimestampedEvent(`✅ Officer Down Emergency Reset & Cleared. Status Normal.`, activeTrackingUnitId);
+            alert(`✅ Officer Down Emergency for Unit ${activeTrackingUnitId} has been reset and cleared.`);
         }
 
         function applyGpsOffset(latDelta, lonDelta) {
@@ -892,6 +984,7 @@
             }).addTo(map).bindPopup(`<b>Target:</b> ${query}`).openPopup();
 
             document.getElementById('perimeterBox').style.display = 'block';
+            logTimestampedEvent(`Perimeter set at location: ${query} with radius ${currentPerimeterRadius}m.`);
         }
 
         function updatePerimeterRadius(val) {
@@ -930,40 +1023,154 @@
                 map.setView(cumberlandDefaultCoords, 12);
                 toggleCommandPanel();
 
+                logTimestampedEvent("Search operation terminated and telemetry cleared.");
                 alert("Operation successfully terminated and telemetry cleared.");
             }
         }
 
-        function signInOutsideAgency() { const name = prompt("Agency Name:"); if (name) alert(`Signed in: ${name}`); }
+        function signInOutsideAgency() {
+            const name = prompt("Agency Name:");
+            if (name) {
+                logTimestampedEvent(`Outside Agency Signed In: ${name}`);
+                alert(`Signed in: ${name}`);
+            }
+        }
 
         function triggerEvidenceCapture() {
             const name = prompt("Evidence / Article Description:");
             if (name) {
-                const now = new Date().toLocaleTimeString();
-                const evidenceList = document.getElementById('evidenceList');
-                const li = document.createElement('li');
-                li.innerHTML = `<span>${name}</span> <span style="color:#D4AF37;">${now}</span>`;
-                evidenceList.prepend(li);
+                logTimestampedEvent(`Evidence Logged: ${name}`, activeTrackingUnitId || "Command");
                 alert(`Logged: ${name}`);
             }
         }
 
+        // Speech Recognition & Synthesis for Verbal Dictation Report
+        let recognition = null;
+        let isDictating = false;
+
+        function startVoiceDictation() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Speech recognition is not supported in this browser. Please type directly into the notes box.");
+                return;
+            }
+
+            if (isDictating) {
+                if (recognition) recognition.stop();
+                isDictating = false;
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isDictating = true;
+                alert("🎙️ Dictation active. Speak clearly into your mic...");
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                const notesBox = document.getElementById('dictatedNotesText');
+                if (finalTranscript) {
+                    notesBox.value += (notesBox.value ? ' ' : '') + finalTranscript;
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                isDictating = false;
+            };
+
+            recognition.onend = () => {
+                isDictating = false;
+            };
+
+            recognition.start();
+        }
+
+        function stopAndPlaybackReport() {
+            if (isDictating && recognition) {
+                recognition.stop();
+                isDictating = false;
+            }
+
+            const notesText = document.getElementById('dictatedNotesText').value;
+            if (!notesText.trim()) {
+                alert("No report text found to read back.");
+                return;
+            }
+
+            if (!window.speechSynthesis) {
+                alert("Speech synthesis not supported in this browser.");
+                return;
+            }
+
+            window.speechSynthesis.cancel(); // Stop any ongoing speech
+            const utterance = new SpeechSynthesisUtterance("Reading back dictated report notes. " + notesText + ". Please check for any mistakes.");
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+
         function openReportModal() {
             document.getElementById('reportTimestamp').innerText = `Generated: ${new Date().toLocaleString()}`;
+            document.getElementById('repOfficerName').innerText = activeTrackingUnitId ? `Unit ${activeTrackingUnitId} (Active Officer)` : `Cumberland S.O. Command`;
+            document.getElementById('finalReportContainer').style.display = 'none';
+            document.getElementById('printReportBtn').style.display = 'none';
+            document.getElementById('emailReportBtn').style.display = 'none';
+            document.getElementById('reportModal').style.display = 'flex';
+        }
+
+        function generateFinalReport() {
             const repUnitList = document.getElementById('reportUnitList');
             repUnitList.innerHTML = '';
             for (let uId in activeUnitsMap) {
                 let li = document.createElement('li');
-                li.innerText = `Unit ${uId} - ${activeUnitsMap[uId].location}`;
+                li.innerText = `Unit ${uId} - Location: ${activeUnitsMap[uId].location} (Logged at ${activeUnitsMap[uId].time})`;
                 repUnitList.appendChild(li);
             }
-            document.getElementById('reportModal').style.display = 'flex';
+
+            const repEvidenceList = document.getElementById('reportEvidenceList');
+            repEvidenceList.innerHTML = '';
+            globalTimestampedLogs.forEach(log => {
+                let li = document.createElement('li');
+                li.innerText = `[${log.date} ${log.time}] ${log.officer} @ ${log.location}: ${log.desc}`;
+                repEvidenceList.appendChild(li);
+            });
+
+            document.getElementById('finalReportContainer').style.display = 'block';
+            document.getElementById('printReportBtn').style.display = 'inline-block';
+            document.getElementById('emailReportBtn').style.display = 'inline-block';
+
+            logTimestampedEvent("Final Itemized & Verbal Report generated.");
+            alert("📋 Final report automatically compiled and generated successfully!");
         }
 
-        function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; }
+        function closeReportModal() { 
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            if (recognition) recognition.stop();
+            document.getElementById('reportModal').style.display = 'none'; 
+        }
+
         function emailReportDraft() { alert("Report prepared for email dispatch."); }
 
-        function assignSectorGrid() { alert("Cumberland Grid Matrix Active."); }
+        function assignSectorGrid() { 
+            logTimestampedEvent("Sector Grid Matrix reviewed/assigned.");
+            alert("Cumberland Grid Matrix Active."); 
+        }
     </script>
 </body>
 </html>
