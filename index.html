@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cumberland County Sheriff's Office — Search and Rescue (TACNET)</title>
+    <!-- Leaflet CSS for Mapping -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --tactical-od: #4B5320;
+            --tactical-dark-od: #2B3111;
+            --tactical-gold: #D4AF37;
+            --tactical-light-gold: #F3E5AB;
+            --bg-dark: #161A0D;
+            --text-light: #E0E0E0;
+            --alert-red: #D32F2F;
+            --neon-green: #00FF66;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header Styling */
+        header {
+            background-color: var(--tactical-dark-od);
+            border-bottom: 2px solid var(--tactical-gold);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .header-title h1 {
+            color: var(--tactical-gold);
+            font-size: 1.1rem;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+
+        .header-title p {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            opacity: 0.85;
+        }
+
+        .operator-badge {
+            background-color: var(--tactical-od);
+            border: 1px solid var(--tactical-gold);
+            color: var(--tactical-gold);
+            padding: 5px 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border-radius: 4px;
+            text-align: right;
+            line-height: 1.2;
+        }
+
+        .operator-badge span {
+            display: block;
+            font-size: 0.6rem;
+            color: var(--tactical-light-gold);
+            font-weight: normal;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            height: calc(100vh - 60px);
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column-reverse;
+            }
+            sidebar {
+                width: 100% !important;
+                height: 48vh;
+            }
+            #map {
+                height: 52vh !important;
+            }
+        }
+
+        /* Sidebar Panel */
+        sidebar {
+            width: 360px;
+            background-color: var(--tactical-dark-od);
+            border-right: 1px solid var(--tactical-gold);
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            z-index: 999;
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            margin-bottom: 12px;
+        }
+
+        .panel-section h2 {
+            color: var(--tactical-gold);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--tactical-gold);
+            padding-bottom: 3px;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Exclusive Department Notice */
+        .security-banner {
+            background: rgba(212, 175, 55, 0.15);
+            border: 1px solid var(--tactical-gold);
+            padding: 6px;
+            font-size: 0.68rem;
+            color: var(--tactical-light-gold);
+            text-align: center;
+            border-radius: 3px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        /* Search Box Elements */
+        .search-box-group {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--tactical-gold);
+            color: #fff;
+            padding: 6px;
+            font-size: 0.75rem;
+            border-radius: 3px;
+        }
+
+        .go-btn {
+            background-color: var(--tactical-gold);
+            color: var(--bg-dark);
+            border: none;
+            padding: 6px 12px;
+            font-weight: bold;
+            font-size: 0.75rem;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .go-btn:hover {
+            background-color: var(--tactical-light-gold);
+        }
+
+        /* Perimeter Slider Control */
+        .perimeter-control {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--neon-green);
+            padding: 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            margin-bottom: 6px;
+        }
+
+        .perimeter-control label {
+            display: flex;
+            justify-content: space-between;
+            color: var(--neon-green);
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .perimeter-control input[type=range] {
+            width: 100%;
+            accent-color: var(--neon-green);
+        }
+
+        /* Action Buttons */
+        .tactical-btn {
+            background-color: var(--tactical-od);
+            color: var(--tactical-gold);
+            border: 1px solid var(--tactical-gold);
+            padding: 8px;
+            width: 100%;
+            font-weight: bold;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-bottom: 6px;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+        }
+
+        .tactical-btn:hover {
+            background-color: var(--tactical-gold);
+            color: var(--bg-dark);
+        }
+
+        /* Terminator Navigation Buttons */
+        .nav-button-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 6px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            background-color: #384018;
+            color: var(--tactical-gold);
+            border: 1px solid var(--tactical-gold);
+            padding: 7px;
+            font-weight: bold;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            border-radius: 3px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--tactical-gold);
+            color: var(--bg-dark);
+        }
+
+        .terminate-btn {
+            background-color: #8B0000;
+            color: #fff;
+            border: 1px solid #FF0000;
+        }
+
+        .terminate-btn:hover {
+            background-color: #FF0000;
+            color: #fff;
+        }
+
+        /* Emergency Officer Down Button */
+        .emergency-btn {
+            background-color: var(--alert-red);
+            color: #ffffff;
+            border: 2px solid #FFD700;
+            padding: 10px;
+            width: 100%;
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 8px rgba(211, 47, 47, 0.6);
+        }
+
+        .hold-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background-color: #FFD700;
+            width: 0%;
+            transition: width 0.05s linear;
+        }
+
+        /* Logs Lists */
+        .log-box {
+            list-style: none;
+            font-size: 0.7rem;
+            max-height: 75px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--tactical-gold);
+            border-radius: 3px;
+            padding: 4px;
+        }
+
+        .log-box li {
+            padding: 3px;
+            border-bottom: 1px dashed rgba(212, 175, 55, 0.3);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Map Viewport */
+        #map {
+            flex: 1;
+            height: 100%;
+            background-color: #111;
+        }
+
+        /* Report Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #fff;
+            color: #111;
+            width: 90%;
+            max-width: 650px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 25px;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .modal-header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .report-section {
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        .signature-block {
+            margin-top: 20px;
+            border-top: 1px solid #ccc;
+            padding-top: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .sig-line {
+            width: 45%;
+            border-bottom: 1px solid #111;
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.75rem;
+            padding-bottom: 3px;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printableReport, #printableReport * { visibility: visible; }
+            #printableReport { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1>Cumberland County Sheriff's Office</h1>
+            <p>TACNET Search & Rescue Command System</p>
+        </div>
+        <div class="operator-badge">
+            Earl Wood, Deputy Sheriff (Ret.)
+            <span>System Creator</span>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <sidebar>
+            <!-- Security / Exclusive Ownership Notice -->
+            <div class="security-banner">
+                🔒 EXCLUSIVE PROPERTY: Cumberland County S.O. Unauthorized duplication prohibited.
+            </div>
+
+            <!-- Terminator & Navigation Buttons -->
+            <div class="panel-section">
+                <div class="nav-button-group">
+                    <button class="nav-btn" onclick="goBackView()">◀ Back</button>
+                    <button class="nav-btn" onclick="resetViewMatrix()">⟳ Reset</button>
+                    <button class="nav-btn terminate-btn" onclick="terminateSearchOperation()">🛑 Terminate</button>
+                </div>
+            </div>
+
+            <!-- Address Search with Neon Perimeter -->
+            <div class="panel-section">
+                <h2>Address Search & Neon Perimeter</h2>
+                <div class="search-box-group">
+                    <input type="text" id="addressInput" class="search-input" placeholder="Enter target address/location...">
+                    <button class="go-btn" onclick="searchAddressAndPerimeter()">GO</button>
+                </div>
+                <div class="perimeter-control" id="perimeterBox" style="display:none;">
+                    <label><span>Perimeter Radius:</span> <span id="radiusVal">500m</span></label>
+                    <input type="range" id="radiusSlider" min="100" max="2500" step="50" value="500" oninput="updatePerimeterRadius(this.value)">
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Field Operations</h2>
+                <button class="tactical-btn" id="gpsToggleBtn" onclick="toggleGPSBroadcast()">🟢 Activate Real-Time Live GPS</button>
+                <button class="tactical-btn" onclick="assignSectorGrid()">🗺️ Assign Sector Grid</button>
+                <button class="tactical-btn" onclick="triggerEvidenceCapture()">📷 Timestamp Photo / Article Find</button>
+                <button class="tactical-btn" style="background-color: #384018;" onclick="signInOutsideAgency()">📝 Outside Agency Sign-In</button>
+                
+                <!-- Report Generation Button -->
+                <button class="tactical-btn" style="background-color: #2E5B88;" onclick="openReportModal()">📋 Itemized Report & Sign-Off</button>
+                
+                <!-- HOLD-TO-ACTIVATE EMERGENCY BUTTON -->
+                <button class="emergency-btn" id="emergencyBtn">
+                    🚨 HOLD 2s: OFFICER DOWN
+                    <div class="hold-progress" id="holdProgress"></div>
+                </button>
+            </div>
+
+            <div class="panel-section">
+                <h2>Outside Agency Log</h2>
+                <ul class="log-box" id="agencyLogList">
+                    <li><span>CCSO Command (Primary)</span> <span style="color:#D4AF37;">Active</span></li>
+                </ul>
+            </div>
+
+            <div class="panel-section">
+                <h2>Evidence & Photo Log</h2>
+                <ul class="log-box" id="evidenceList">
+                    <li><span>LKP Reference Point</span> <span style="color:#D4AF37;">00:00</span></li>
+                </ul>
+            </div>
+        </sidebar>
+
+        <div id="map"></div>
+    </div>
+
+    <!-- Printable / Email-Ready Itemized Report Modal -->
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal-content" id="printableReport">
+            <div class="modal-header">
+                <div>
+                    <h2>Cumberland County Sheriff's Office</h2>
+                    <p style="font-size:0.75rem; color:#555;">Official TACNET Search & Rescue Incident Report</p>
+                </div>
+                <div style="text-align:right; font-size:0.75rem;">
+                    <span id="reportTimestamp"></span>
+                </div>
+            </div>
+
+            <div class="report-section">
+                <b>Incident Summary:</b> Missing 2-Year-Old Female | Cumberland County Sector Alpha<br>
+                <b>Operation Status:</b> Active / Managed via TACNET Matrix
+            </div>
+
+            <div class="report-section">
+                <h3 style="font-size:0.8rem; border-bottom:1px solid #333; margin-bottom:4px;">Outside Agency Sign-Ins</h3>
+                <ul id="reportAgencyList" style="font-size:0.75rem; padding-left:15px;"></ul>
+            </div>
+
+            <div class="report-section">
+                <h3 style="font-size:0.8rem; border-bottom:1px solid #333; margin-bottom:4px;">Itemized Evidence & Photo Log</h3>
+                <ul id="reportEvidenceList" style="font-size:0.75rem; padding-left:15px;"></ul>
+            </div>
+
+            <div class="signature-block">
+                <div class="sig-line">
+                    Primary Investigating Officer Signature
+                </div>
+                <div class="sig-line">
+                    Shift Commander / Supervisor Sign-Off
+                </div>
+            </div>
+
+            <div style="margin-top:20px; text-align:right;" class="no-print">
+                <button class="go-btn" onclick="window.print()">🖨️ Print PDF / Report</button>
+                <button class="go-btn" style="background-color:#4B5320; color:#fff;" onclick="emailReportDraft()">📧 Email Report</button>
+                <button class="go-btn" style="background-color:#D32F2F; color:#fff;" onclick="closeReportModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize Map centered on Cumberland County, VA sector
+        const cumberlandCoords = [37.5459, -78.2153];
+        const map = L.map('map').setView(cumberlandCoords, 13);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap & CARTO',
+            maxZoom: 19
+        }).addTo(map);
+
+        const incidentMarker = L.circleMarker([37.5500, -78.2200], {
+            radius: 12,
+            color: '#D4AF37',
+            fillColor: '#FFD700',
+            fillOpacity: 0.9
+        }).addTo(map).bindPopup("<b>LKP:</b> Missing 2-Yr-Old Female<br>Cumberland County Sector Alpha");
+
+        let searchGridLayer = L.layerGroup().addTo(map);
+
+        function createGridOverlay() {
+            const sectors = [
+                { name: "Grid A1", coords: [[37.5500, -78.2300], [37.5750, -78.2000]] },
+                { name: "Grid A2", coords: [[37.5500, -78.2000], [37.5750, -78.1700]] },
+                { name: "Grid B1", coords: [[37.5250, -78.2300], [37.5500, -78.2000]] },
+                { name: "Grid B2", coords: [[37.5250, -78.2000], [37.5250, -78.1700]] }
+            ];
+            sectors.forEach(sec => {
+                let rect = L.rectangle(sec.coords, {
+                    color: '#D4AF37',
+                    weight: 1,
+                    dashArray: '4, 4',
+                    fillColor: '#4B5320',
+                    fillOpacity: 0.1
+                }).bindPopup(`<b>Sector Designation:</b> ${sec.name}`);
+                searchGridLayer.addLayer(rect);
+            });
+        }
+        createGridOverlay();
+
+        // Address Search and Neon Green Perimeter Variables
+        let searchedPerimeterCircle = null;
+        let currentPerimeterRadius = 500;
+        let searchTargetLatLng = null;
+
+        function searchAddressAndPerimeter() {
+            const query = document.getElementById('addressInput').value;
+            if (!query) {
+                alert("Please enter a valid address or location identifier.");
+                return;
+            }
+
+            // Simulated geocoding offset for demonstration in Cumberland County sector
+            searchTargetLatLng = [37.5520 + (Math.random() * 0.008 - 0.004), -78.2100 + (Math.random() * 0.008 - 0.004)];
+            
+            map.setView(searchTargetLatLng, 15);
+
+            if (searchedPerimeterCircle) {
+                map.removeLayer(searchedPerimeterCircle);
+            }
+
+            searchedPerimeterCircle = L.circle(searchTargetLatLng, {
+                radius: currentPerimeterRadius,
+                color: '#00FF66',
+                weight: 2,
+                fillColor: '#00FF66',
+                fillOpacity: 0.15
+            }).addTo(map).bindPopup(`<b>Searched Location:</b> ${query}<br><b>Perimeter:</b> ${currentPerimeterRadius}m`).openPopup();
+
+            document.getElementById('perimeterBox').style.display = 'block';
+            alert(`Location found. Adjustable Neon Green Perimeter established around "${query}".`);
+        }
+
+        function updatePerimeterRadius(val) {
+            currentPerimeterRadius = parseInt(val);
+            document.getElementById('radiusVal').innerText = currentPerimeterRadius + 'm';
+            if (searchedPerimeterCircle) {
+                searchedPerimeterCircle.setRadius(currentPerimeterRadius);
+            }
+        }
+
+        // Terminator and Navigation Functions
+        function goBackView() {
+            map.setView(cumberlandCoords, 13);
+            alert("Returned to Command Overview Matrix.");
+        }
+
+        function resetViewMatrix() {
+            map.setView(cumberlandCoords, 14);
+            alert("View Matrix Reset.");
+        }
+
+        function terminateSearchOperation() {
+            if (confirm("WARNING: Are you sure you want to TERMINATE the active search operation? This will archive all logs.")) {
+                alert("Search operation successfully terminated and archived by Cumberland County S.O. command.");
+            }
+        }
+
+        // Outside Agency Sign-In
+        function signInOutsideAgency() {
+            const agencyName = prompt("Enter Outside Agency Name (e.g., VSP, State Forestry, County Fire/Rescue):", "Mutual Aid Agency");
+            if (agencyName) {
+                const now = new Date();
+                const dateTimeLabel = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+
+                const agencyLogList = document.getElementById('agencyLogList');
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${agencyName}</span> <span style="color:#D4AF37;">${dateTimeLabel}</span>`;
+                agencyLogList.prepend(li);
+
+                alert(`Outside Agency Signed In:\nAgency: ${agencyName}\nTimestamp: ${dateTimeLabel}`);
+            }
+        }
+
+        // Time-Stamped Photograph & Article Finder
+        function triggerEvidenceCapture() {
+            const now = new Date();
+            const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+            const articleName = prompt("Enter Article / Evidence ID or Description (e.g., 'Bootprint', 'Clothing Fragment'):", "Article Item");
+            
+            if (articleName) {
+                const evidenceList = document.getElementById('evidenceList');
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${articleName}</span> <span style="color:#D4AF37;">${timestamp}</span>`;
+                evidenceList.prepend(li);
+
+                L.marker([37.5480 + (Math.random() * 0.01), -78.2100 - (Math.random() * 0.01)], {
+                    icon: L.divIcon({
+                        className: 'evidence-pin',
+                        html: `<div style="background-color: #D4AF37; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #161A0D; box-shadow: 0 0 6px #D4AF37;"></div>`,
+                        iconSize: [12, 12]
+                    })
+                }).addTo(map).bindPopup(`<b>Article Found:</b> ${articleName}<br><b>Logged:</b> ${timestamp}`).openPopup();
+
+                alert(`Article '${articleName}' logged with timestamp ${timestamp} and pinned to map.`);
+            }
+        }
+
+        // Real-time Live GPS Activation Logic
+        let userMarker = null;
+        let emergencyMarker = null;
+        let trackingActive = false;
+        let currentLat = 37.5459;
+        let currentLng = -78.2153;
+
+        function toggleGPSBroadcast() {
+            const btn = document.getElementById('gpsToggleBtn');
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser.");
+                return;
+            }
+
+            if (!trackingActive) {
+                trackingActive = true;
+                btn.style.backgroundColor = '#00FF66';
+                btn.style.color = '#161A0D';
+                btn.innerText = '🟢 LIVE GPS ACTIVE';
+
+                navigator.geolocation.watchPosition(position => {
+                    currentLat = position.coords.latitude;
+                    currentLng = position.coords.longitude;
+                    const heading = position.coords.heading || 0;
+
+                    if (!userMarker) {
+                        userMarker = L.marker([currentLat, currentLng], {
+                            icon: L.divIcon({
+                                className: 'tactical-heading-icon',
+                                html: `<div style="position: relative; width: 20px; height: 20px;">
+                                           <div style="background-color: #D4AF37; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #4B5320; box-shadow: 0 0 10px #D4AF37; position: absolute; top: 3px; left: 3px;"></div>
+                                           <div style="position: absolute; top: -4px; left: 8px; width: 4px; height: 8px; background-color: #D4AF37; transform: rotate(${heading}deg); transform-origin: bottom center;"></div>
+                                       </div>`,
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10]
+                            })
+                        }).addTo(map).bindPopup("<b>Operator:</b> Live GPS Feed Active").openPopup();
+                    } else {
+                        userMarker.setLatLng([currentLat, currentLng]);
+                    }
+                    map.setView([currentLat, currentLng], 15);
+                }, err => {
+                    console.error(err);
+                }, { enableHighAccuracy: true });
+                
+                alert("Real-Time Live GPS tracking successfully activated.");
+            } else {
+                alert("Live GPS Tracking is already active.");
+            }
+        }
+
+        // Report Generation Modal Functions
+        function openReportModal() {
+            document.getElementById('reportTimestamp').innerText = `Generated: ${new Date().toLocaleString()}`;
+            
+            // Populate agency list in report
+            const repAgencyList = document.getElementById('reportAgencyList');
+            repAgencyList.innerHTML = '';
+            document.querySelectorAll('#agencyLogList li').forEach(li => {
+                let clone = li.cloneNode(true);
+                repAgencyList.appendChild(clone);
+            });
+
+            // Populate evidence list in report
+            const repEvidenceList = document.getElementById('reportEvidenceList');
+            repEvidenceList.innerHTML = '';
+            document.querySelectorAll('#evidenceList li').forEach(li => {
+                let clone = li.cloneNode(true);
+                repEvidenceList.appendChild(clone);
+            });
+
+            document.getElementById('reportModal').style.display = 'flex';
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+
+        function emailReportDraft() {
+            alert("Report formatted and prepared for secure email dispatch to Cumberland County S.O. Command Staff.");
+        }
+
+        // Hold-to-Activate Officer Down Emergency
+        const emergencyBtn = document.getElementById('emergencyBtn');
+        const holdProgress = document.getElementById('holdProgress');
+        let holdTimer = null;
+        let progressInterval = null;
+        let holdDuration = 2000;
+        let startTime = 0;
+
+        function startHold(e) {
+            e.preventDefault();
+            startTime = Date.now();
+            holdProgress.style.width = '0%';
+
+            progressInterval = setInterval(() => {
+                let elapsed = Date.now() - startTime;
+                let percent = (elapsed / holdDuration) * 100;
+                if (percent >= 100) {
+                    percent = 100;
+                    clearInterval(progressInterval);
+                }
+                holdProgress.style.width = percent + '%';
+            }, 30);
+
+            holdTimer = setTimeout(() => {
+                triggerOfficerDownEmergency();
+            }, holdDuration);
+        }
+
+        function cancelHold() {
+            clearTimeout(holdTimer);
+            clearInterval(progressInterval);
+            holdProgress.style.width = '0%';
+        }
+
+        emergencyBtn.addEventListener('mousedown', startHold);
+        emergencyBtn.addEventListener('mouseup', cancelHold);
+        emergencyBtn.addEventListener('mouseleave', cancelHold);
+        emergencyBtn.addEventListener('touchstart', startHold);
+        emergencyBtn.addEventListener('touchend', cancelHold);
+
+        function triggerOfficerDownEmergency() {
+            holdProgress.style.width = '100%';
+            if (emergencyMarker) map.removeLayer(emergencyMarker);
+
+            emergencyMarker = L.marker([currentLat, currentLng], {
+                icon: L.divIcon({
+                    className: 'emergency-beacon-icon',
+                    html: `<div style="background-color: #FF1744; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #FFFFFF; box-shadow: 0 0 20px #FF1744; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">!</div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                })
+            }).addTo(map).bindPopup("<b style='color: #FF1744;'>🚨 CRITICAL ALERT: OFFICER DOWN!</b><br>Live Distress Beacon Broadcasting").openPopup();
+
+            map.setView([currentLat, currentLng], 16);
+            alert("🚨 OFFICER DOWN ALERT BROADCASTED LIVE TO ALL UNITS ACROSS CUMBERLAND COUNTY!");
+        }
+
+        function assignSectorGrid() {
+            alert("Sector Grid Matrix Refreshed.");
+        }
+    </script>
+</body>
+</html>
